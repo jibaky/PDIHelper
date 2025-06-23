@@ -1,0 +1,48 @@
+<div class="modal-overlay" (click)="onOverlayClick($event)">
+  <div class="modal-content" (click)="$event.stopPropagation()" *ngIf="node">
+    <h3>{{ getModalTitle() }}</h3>
+
+    <!-- Standard Image Viewer -->
+    <div class="modal-image-container" *ngIf="node.type !== 'editor-difference' && !imageLoadError && node.imageSrc">
+        <img [src]="node.imageSrc"
+             alt="Displayed Image"
+             class="modal-image"
+             (error)="onImageError()">
+    </div>
+    
+    <!-- Difference Node Viewer -->
+    <div *ngIf="node.type === 'editor-difference' && node.imageSrc && node.imageSrcB" class="modal-difference-container">
+      <img [src]="node.imageSrc" alt="Image A" class="difference-image-bottom">
+      <img [src]="node.imageSrcB" alt="Image B" class="difference-image-top" [style.opacity]="(node.differenceSliderValue || 0) / 100">
+    </div>
+
+    <!-- Placeholder for missing images -->
+    <div *ngIf="imageLoadError || (node.type !== 'editor-difference' && !node.imageSrc) || (node.type === 'editor-difference' && (!node.imageSrc || !node.imageSrcB))" class="modal-image-placeholder">
+      <span *ngIf="imageLoadError">Error loading image.</span>
+      <span *ngIf="!imageLoadError">No image to display.</span>
+    </div>
+
+    <!-- Controls for Add Node -->
+    <div *ngIf="node.type === 'editor-add'" class="modal-op-buttons">
+      <button [class.active]="node.addOperationMode === 'add'" (click)="changeOperation('add')">A + B</button>
+      <button [class.active]="node.addOperationMode === 'average'" (click)="changeOperation('average')">(A + B) / 2</button>
+      <button [class.active]="node.addOperationMode === 'root'" (click)="changeOperation('root')">SQRT(A²+B²)</button>
+    </div>
+
+    <!-- Controls for Threshold Node -->
+    <div *ngIf="node.type === 'editor-threshold'" class="modal-slider-container">
+      <label>0</label>
+      <input type="range" min="0" max="255" class="threshold-slider" [ngModel]="node.threshold" (ngModelChange)="thresholdChanged.emit($event)">
+      <label>{{node.threshold}}</label>
+    </div>
+
+    <!-- Controls for Difference Node -->
+    <div *ngIf="node.type === 'editor-difference'" class="modal-slider-container">
+      <label>Image A</label>
+      <input type="range" min="0" max="100" class="difference-slider" [ngModel]="node.differenceSliderValue" (ngModelChange)="differenceSliderChanged.emit($event)">
+      <label>Image B</label>
+    </div>
+
+    <button class="modal-close-button" (click)="onCloseButtonClick()">Close</button>
+  </div>
+</div>

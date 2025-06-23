@@ -1,0 +1,162 @@
+<div class="main-layout">
+  <div class="sidebar">
+    <button (click)="addNodeFromSidebar('image')">Add Image Node</button>
+    <button (click)="addNodeFromSidebar('editor-add')">Add "Add" Node</button>
+    <button (click)="addNodeFromSidebar('editor-difference')">Add "Difference" Node</button>
+    <button (click)="addNodeFromSidebar('editor-greyscale')">Add Greyscale Node</button>
+    <button (click)="addNodeFromSidebar('editor-threshold')">Add Threshold Node</button>
+    <button (click)="addNodeFromSidebar('editor-histogram-equalization')">Add Equalization Node</button>
+    <button (click)="addNodeFromSidebar('editor-convolution')">Add Convolution Node</button>
+  </div>
+
+  <div #containerRef class="container"
+       (mousemove)="onContainerMouseMove($event)"
+       (mouseup)="letItGo()"
+       (mouseleave)="letItGo()">
+    <svg #svgCanvas class="connection-canvas"></svg>
+
+    <div *ngFor="let box of boxes; trackBy: boxTrackBy"
+         #boxElement
+         class="boxes"
+         [attr.data-node-id]="box.id"
+         [ngClass]="{
+            'image-box': box.type === 'image',
+            'editor-greyscale-box': box.type === 'editor-greyscale',
+            'editor-threshold-box': box.type === 'editor-threshold',
+            'editor-histogram-box': box.type === 'editor-histogram-equalization',
+            'editor-convolution-box': box.type === 'editor-convolution',
+            'editor-add-box': box.type === 'editor-add',
+            'editor-difference-box': box.type === 'editor-difference'
+         }"
+         [style.left.px]="box.x"
+         [style.top.px]="box.y"
+         [style.width.px]="(box.width || 220) * (box.scale || 1)"
+         [style.height.px]="(box.height || 150) * (box.scale || 1)"
+         (mousedown)="grabFunc($event, box)"
+         (mouseup)="endConnection($event, box)">
+
+      <div class="maximize-icon" (click)="resizeNode(box, $event)"></div>
+      <div class="pseudocode-icon" 
+           *ngIf="box.type !== 'editor-difference' && box.type !== 'image'"
+           title="Generate Pseudocode"
+           (click)="openPseudocodeModal(box, $event)">
+        &lt;/&gt;
+      </div>
+      <div class="delete-icon" (click)="deleteNode(box, $event)">&times;</div>
+      <div class="box-title">{{ getBoxTitle(box) }}</div>
+
+      <div class="add-child-icon" (click)="toggleAddMenu(box, $event)">+</div>
+      <div class="add-child-menu" 
+           *ngIf="box.isAddMenuOpen"
+           (mousedown)="$event.stopPropagation()"
+           (mouseup)="$event.stopPropagation()">
+          <div *ngIf="getValidChildrenTypes(box).length === 0" class="menu-item-disabled">No valid children</div>
+          <div *ngFor="let child of getValidChildrenTypes(box)" 
+               class="menu-item"
+               (mousedown)="addChildNode(box, child.type)">
+              Add {{ child.label }}
+          </div>
+      </div>
+      
+      <!-- Image Node -->
+      <ng-container *ngIf="box.type === 'image'">
+        <app-image-loader *ngIf="!box.imageSrc" [node]="box" (imageLoaded)="onImageLoaded($event, box.id)"></app-image-loader>
+        <div *ngIf="!box.imageSrc" class="image-box-placeholder"></div>
+        <img *ngIf="box.imageSrc" [src]="box.imageSrc" alt="Loaded Image" class="box-image-preview">
+        <button *ngIf="box.imageSrc" class="node-button" (click)="openImageModal($event, box)">View Image</button>
+      </ng-container>
+
+      <!-- Greyscale Node -->
+      <ng-container *ngIf="box.type === 'editor-greyscale'">
+        <div *ngIf="!box.imageSrc" class="editor-box-placeholder"><span>(Connect to parent)</span></div>
+        <img *ngIf="box.imageSrc" [src]="box.imageSrc" alt="Processed Image" class="box-image-preview">
+        <button *ngIf="box.imageSrc" class="node-button" (click)="openImageModal($event, box)">View Image</button>
+      </ng-container>
+
+      <!-- Threshold Node -->
+      <ng-container *ngIf="box.type === 'editor-threshold'">
+        <div *ngIf="!box.imageSrc" class="editor-box-placeholder"><span>(Connect to parent)</span></div>
+        <img *ngIf="box.imageSrc" [src]="box.imageSrc" alt="Processed Image" class="box-image-preview">
+        <div class="node-controls-container" *ngIf="box.imageSrc">
+          <div class="threshold-label">Threshold: {{box.threshold}}</div>
+          <input type="range" min="0" max="255" class="threshold-slider" [(ngModel)]="box.threshold" (input)="onThresholdChange(box)" (mousedown)="$event.stopPropagation()">
+          <button class="node-button" (click)="openImageModal($event, box)">View Image</button>
+        </div>
+      </ng-container>
+
+      <!-- Histogram Equalization Node -->
+      <ng-container *ngIf="box.type === 'editor-histogram-equalization'">
+        <div *ngIf="!box.imageSrc" class="editor-box-placeholder"><span>(Connect to parent)</span></div>
+        <img *ngIf="box.imageSrc" [src]="box.imageSrc" alt="Processed Image" class="box-image-preview">
+        <button *ngIf="box.imageSrc" class="node-button" (click)="openImageModal($event, box)">View Image</button>
+      </ng-container>
+
+      <!-- Convolution Node -->
+      <ng-container *ngIf="box.type === 'editor-convolution'">
+        <div *ngIf="!box.imageSrc" class="editor-box-placeholder"><span>(Connect to parent)</span></div>
+        <img *ngIf="box.imageSrc" [src]="box.imageSrc" alt="Processed Image" class="box-image-preview">
+        <div class="node-button-container" *ngIf="box.imageSrc">
+            <button class="node-button" (click)="openConvolutionModal(box)">Edit Filter</button>
+            <button class="node-button" (click)="openImageModal($event, box)">View Image</button>
+        </div>
+      </ng-container>
+
+      <!-- Add Node -->
+      <ng-container *ngIf="box.type === 'editor-add'">
+        <div *ngIf="!box.imageSrc" class="editor-box-placeholder">
+          <span>(Connect to 2 parents)</span>
+          <span class="parent-count">{{box.parentIds.length}} / 2</span>
+        </div>
+        <img *ngIf="box.imageSrc" [src]="box.imageSrc" alt="Processed Image" class="box-image-preview">
+        <div class="node-button-container" *ngIf="box.imageSrc">
+            <div class="op-button-group">
+              <button class="op-button" [class.active]="box.addOperationMode === 'add'" (click)="setAddOperationMode(box, 'add', $event)">A+B</button>
+              <button class="op-button" [class.active]="box.addOperationMode === 'average'" (click)="setAddOperationMode(box, 'average', $event)">(A+B)/2</button>
+              <button class="op-button" [class.active]="box.addOperationMode === 'root'" (click)="setAddOperationMode(box, 'root', $event)">&#8730;(A²+B²)</button>
+            </div>
+            <button class="node-button" (click)="openImageModal($event, box)">View Image</button>
+        </div>
+      </ng-container>
+
+      <!-- Difference Node -->
+      <ng-container *ngIf="box.type === 'editor-difference'">
+        <div *ngIf="!box.imageSrc && !box.imageSrcB" class="editor-box-placeholder">
+          <span>(Connect to 2 parents)</span>
+          <span class="parent-count">{{box.parentIds.length}} / 2</span>
+        </div>
+        <div class="difference-image-container" *ngIf="box.imageSrc && box.imageSrcB">
+          <img [src]="box.imageSrc" alt="Image A" class="difference-image-bottom">
+          <img [src]="box.imageSrcB" alt="Image B" class="difference-image-top" [style.opacity]="(box.differenceSliderValue || 0) / 100">
+        </div>
+        <div class="node-controls-container" *ngIf="box.imageSrc && box.imageSrcB">
+          <input type="range" min="0" max="100" class="difference-slider" [(ngModel)]="box.differenceSliderValue" (input)="onDifferenceSliderChange(box)" (mousedown)="$event.stopPropagation()">
+          <button class="node-button" (click)="openImageModal($event, box)">View Image</button>
+        </div>
+      </ng-container>
+      
+      <div class="connection-point top" (mouseup)="endConnection($event, box)"></div>
+      <div class="connection-point bottom" (mousedown)="startConnection($event, box)"></div>
+    </div>
+  </div>
+
+  <app-image-modal *ngIf="showImageModal"
+                   [node]="currentNodeForModal"
+                   (closeModal)="closeImageModal()"
+                   (operationChanged)="onAddOperationChanged($event)"
+                   (differenceSliderChanged)="onDifferenceSliderChangedFromModal($event)"
+                   (thresholdChanged)="onThresholdChangedFromModal($event)"></app-image-modal>
+                   
+  <app-convolution-modal *ngIf="showConvolutionModal"
+                         [initialMatrix]="currentNodeForMatrix!.convolutionMatrix!"
+                         [initialMatrixSize]="currentNodeForMatrix!.matrixSize!"
+                         [initialDivisor]="currentNodeForMatrix!.convolutionDivisor!"
+                         (closeModal)="closeConvolutionModal()"
+                         (saveMatrix)="onSaveConvolutionMatrix($event)">
+  </app-convolution-modal>
+  
+  <app-pseudocode-modal *ngIf="showPseudocodeModal"
+                        [steps]="pseudocodeSteps"
+                        [nodeTitle]="pseudocodeNodeTitle"
+                        (closeModal)="closePseudocodeModal()">
+  </app-pseudocode-modal>
+</div>

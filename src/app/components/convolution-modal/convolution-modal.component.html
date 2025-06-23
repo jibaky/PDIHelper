@@ -1,0 +1,29 @@
+<div class="modal-overlay" (click)="onCancel()">
+  <div class="modal-content" (click)="onContentClick($event)">
+    <h3>Edit Convolution Matrix</h3>
+
+    <div class="matrix-controls">
+      <span>Matrix Size:</span>
+      <button [class.active]="matrixSize === 3" (click)="setMatrixSize(3)">3 x 3</button>
+      <button [class.active]="matrixSize === 5" (click)="setMatrixSize(5)">5 x 5</button>
+    </div>
+
+    <div class="divisor-control">
+        <label for="divisorInput">Divisor:</label>
+        <input id="divisorInput" type="number" [(ngModel)]="currentDivisor">
+    </div>
+
+    <div class="matrix-grid-container" [class.size-3]="matrixSize === 3" [class.size-5]="matrixSize === 5">
+      <div *ngFor="let row of currentMatrix; let i = index; trackBy: trackByIndex" class="matrix-row">
+        <div *ngFor="let cell of row; let j = index; trackBy: trackByIndex" class="matrix-cell">
+          <input type="number" [(ngModel)]="currentMatrix[i][j]">
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="cancel-btn" (click)="onCancel()">Cancel</button>
+      <button class="save-btn" (click)="onSave()">Save and Apply</button>
+    </div>
+  </div>
+</div>
