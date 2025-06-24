@@ -30,10 +30,14 @@
     </div>
 
     <!-- Controls for Threshold Node -->
-    <div *ngIf="node.type === 'editor-threshold'" class="modal-slider-container">
-      <label>0</label>
-      <input type="range" min="0" max="255" class="threshold-slider" [ngModel]="node.threshold" (ngModelChange)="thresholdChanged.emit($event)">
-      <label>{{node.threshold}}</label>
+    <div *ngIf="node.type === 'editor-threshold'" class="modal-controls-wrapper">
+      <div class="modal-slider-container">
+        <label>0</label>
+        <input type="range" min="0" max="255" class="threshold-slider" [ngModel]="node.threshold" (ngModelChange)="thresholdChanged.emit($event)">
+        <label>{{node.threshold}}</label>
+      </div>
+      <!-- NEW: Button to apply Otsu's method from within the modal -->
+      <button class="modal-action-button" (click)="applyOtsu.emit()">Apply Otsu</button>
     </div>
 
     <!-- Controls for Difference Node -->
@@ -41,6 +45,13 @@
       <label>Image A</label>
       <input type="range" min="0" max="100" class="difference-slider" [ngModel]="node.differenceSliderValue" (ngModelChange)="differenceSliderChanged.emit($event)">
       <label>Image B</label>
+    </div>
+    
+    <!-- Controls for Noise Reduction Node -->
+    <div *ngIf="node.type === 'editor-noise-reduction'" class="modal-op-buttons">
+      <button [class.active]="node.noiseReductionMode === 'min'" (click)="changeNoiseReduction('min')">Min Filter</button>
+      <button [class.active]="node.noiseReductionMode === 'median'" (click)="changeNoiseReduction('median')">Median Filter</button>
+      <button [class.active]="node.noiseReductionMode === 'max'" (click)="changeNoiseReduction('max')">Max Filter</button>
     </div>
 
     <button class="modal-close-button" (click)="onCloseButtonClick()">Close</button>

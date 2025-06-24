@@ -2,7 +2,8 @@ export interface treeNode {
   id: string; // Unique identifier for the node
   imageSrc?: string; // Base64 or URL for image content
   imageSrcB?: string; // NEW: Base64 for the second image in difference view
-  type: 'image' | 'editor-greyscale' | 'editor-threshold' | 'editor-histogram-equalization' | 'editor-convolution' | 'editor-add' | 'editor-difference';
+  // MODIFIED: Added 'editor-noise-reduction'
+  type: 'image' | 'editor-greyscale' | 'editor-threshold' | 'editor-histogram-equalization' | 'editor-convolution' | 'editor-add' | 'editor-difference' | 'editor-noise-reduction';
   x: number; // X-coordinate for the box's position in the container
   y: number; // Y-coordinate for the box's position in the container
   width: number; // The base width of the node
@@ -25,4 +26,7 @@ export interface treeNode {
   
   // Properties for the 'difference' node
   differenceSliderValue?: number; // Value from 0 to 100
+
+  // NEW: Properties for the 'noise-reduction' node
+  noiseReductionMode?: 'min' | 'median' | 'max';
 }

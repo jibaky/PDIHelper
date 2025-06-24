@@ -14,8 +14,11 @@ export class ImageModalComponent {
   @Input() node: treeNode | null = null;
   @Output() closeModal = new EventEmitter<void>();
   @Output() operationChanged = new EventEmitter<'add' | 'average' | 'root'>();
+  @Output() noiseReductionChanged = new EventEmitter<'min' | 'median' | 'max'>();
   @Output() differenceSliderChanged = new EventEmitter<number>();
-  @Output() thresholdChanged = new EventEmitter<number>(); // NEW
+  @Output() thresholdChanged = new EventEmitter<number>(); 
+  // NEW: Output to trigger Otsu's method from the modal
+  @Output() applyOtsu = new EventEmitter<void>();
 
   public imageLoadError: boolean = false;
 
@@ -32,6 +35,8 @@ export class ImageModalComponent {
         return 'Difference Viewer';
       case 'editor-threshold':
         return 'Threshold Viewer';
+      case 'editor-noise-reduction':
+        return 'Noise Reduction Viewer';
       default:
         return 'Image Viewer';
     }
@@ -56,12 +61,15 @@ export class ImageModalComponent {
     this.operationChanged.emit(mode);
   }
 
+  changeNoiseReduction(mode: 'min' | 'median' | 'max'): void {
+    this.noiseReductionChanged.emit(mode);
+  }
+
   onSliderChange(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.differenceSliderChanged.emit(Number(value));
   }
 
-  // NEW: Handler for threshold slider changes in the modal
   onThresholdSliderChange(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.thresholdChanged.emit(Number(value));

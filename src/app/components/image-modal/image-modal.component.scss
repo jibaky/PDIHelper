@@ -92,7 +92,7 @@ h3 {
   border-radius: 5px;
 }
 
-.modal-op-buttons, .modal-slider-container {
+.modal-op-buttons, .modal-slider-container, .modal-controls-wrapper {
   display: flex;
   gap: 10px;
   margin: 20px 0;
@@ -102,7 +102,12 @@ h3 {
   align-items: center;
 }
 
-.modal-op-buttons button {
+// NEW: Wrapper for threshold controls
+.modal-controls-wrapper {
+  flex-direction: column;
+}
+
+.modal-op-buttons button, .modal-action-button {
   padding: 8px 16px;
   border: 1px solid #ccc;
   background-color: #f0f0f0;
@@ -124,11 +129,12 @@ h3 {
 }
 
 .modal-slider-container {
+  width: 100%;
   label {
     font-size: 0.9em;
     color: #555;
   }
-  .difference-slider {
+  .difference-slider, .threshold-slider {
     flex-grow: 1;
   }
 }

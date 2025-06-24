@@ -1,12 +1,25 @@
 <div class="main-layout">
-  <div class="sidebar">
-    <button (click)="addNodeFromSidebar('image')">Add Image Node</button>
-    <button (click)="addNodeFromSidebar('editor-add')">Add "Add" Node</button>
-    <button (click)="addNodeFromSidebar('editor-difference')">Add "Difference" Node</button>
-    <button (click)="addNodeFromSidebar('editor-greyscale')">Add Greyscale Node</button>
-    <button (click)="addNodeFromSidebar('editor-threshold')">Add Threshold Node</button>
-    <button (click)="addNodeFromSidebar('editor-histogram-equalization')">Add Equalization Node</button>
-    <button (click)="addNodeFromSidebar('editor-convolution')">Add Convolution Node</button>
+  <div class="sidebar" [ngClass]="{ 'collapsed': isSidebarCollapsed }">
+    <div class="toggle-icon-wrapper">
+      <div class="toggle-icon" (click)="toggleSidebar()">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+    <div class="buttons-wrapper">
+      <button (click)="addNodeFromSidebar('image')">Image Node</button>
+      <button (click)="addNodeFromSidebar('editor-add')">"Add" Node</button>
+      <button (click)="addNodeFromSidebar('editor-difference')">"Difference" Node</button>
+      <button (click)="addNodeFromSidebar('editor-greyscale')">Greyscale Node</button>
+      <button (click)="addNodeFromSidebar('editor-threshold')">Threshold Node</button>
+      <button (click)="addNodeFromSidebar('editor-histogram-equalization')">Equalization Node</button>
+      <button (click)="addNodeFromSidebar('editor-convolution')">Convolution Node</button>
+      <button (click)="addNodeFromSidebar('editor-noise-reduction')">Noise Reduction</button>
+      <!-- Preset Buttons -->
+      <button (click)="addGaussianBlurNode()">Gaussian Blur</button>
+      <button (click)="addBoxBlurNode()">Box Blur</button>
+      <button (click)="addLaplacianNode()">Laplacian Sharpen</button>
+      <button (click)="addSobelDetector()">Sobel Border Detect</button>
+    </div>
   </div>
 
   <div #containerRef class="container"
@@ -26,7 +39,8 @@
             'editor-histogram-box': box.type === 'editor-histogram-equalization',
             'editor-convolution-box': box.type === 'editor-convolution',
             'editor-add-box': box.type === 'editor-add',
-            'editor-difference-box': box.type === 'editor-difference'
+            'editor-difference-box': box.type === 'editor-difference',
+            'editor-noise-reduction-box': box.type === 'editor-noise-reduction'
          }"
          [style.left.px]="box.x"
          [style.top.px]="box.y"
@@ -80,6 +94,8 @@
         <div class="node-controls-container" *ngIf="box.imageSrc">
           <div class="threshold-label">Threshold: {{box.threshold}}</div>
           <input type="range" min="0" max="255" class="threshold-slider" [(ngModel)]="box.threshold" (input)="onThresholdChange(box)" (mousedown)="$event.stopPropagation()">
+          <!-- NEW: Button to apply Otsu's method -->
+          <button class="node-button" (click)="applyOtsuThreshold(box)">Apply Otsu</button>
           <button class="node-button" (click)="openImageModal($event, box)">View Image</button>
         </div>
       </ng-container>
@@ -133,6 +149,20 @@
           <button class="node-button" (click)="openImageModal($event, box)">View Image</button>
         </div>
       </ng-container>
+
+      <!-- Noise Reduction Node -->
+      <ng-container *ngIf="box.type === 'editor-noise-reduction'">
+        <div *ngIf="!box.imageSrc" class="editor-box-placeholder"><span>(Connect to parent)</span></div>
+        <img *ngIf="box.imageSrc" [src]="box.imageSrc" alt="Processed Image" class="box-image-preview">
+        <div class="node-button-container" *ngIf="box.imageSrc">
+          <div class="op-button-group">
+            <button class="op-button" [class.active]="box.noiseReductionMode === 'min'" (click)="setNoiseReductionMode(box, 'min', $event)">Min</button>
+            <button class="op-button" [class.active]="box.noiseReductionMode === 'median'" (click)="setNoiseReductionMode(box, 'median', $event)">Median</button>
+            <button class="op-button" [class.active]="box.noiseReductionMode === 'max'" (click)="setNoiseReductionMode(box, 'max', $event)">Max</button>
+          </div>
+          <button class="node-button" (click)="openImageModal($event, box)">View Image</button>
+        </div>
+      </ng-container>
       
       <div class="connection-point top" (mouseup)="endConnection($event, box)"></div>
       <div class="connection-point bottom" (mousedown)="startConnection($event, box)"></div>
@@ -143,8 +173,10 @@
                    [node]="currentNodeForModal"
                    (closeModal)="closeImageModal()"
                    (operationChanged)="onAddOperationChanged($event)"
+                   (noiseReductionChanged)="onNoiseReductionChanged($event)"
                    (differenceSliderChanged)="onDifferenceSliderChangedFromModal($event)"
-                   (thresholdChanged)="onThresholdChangedFromModal($event)"></app-image-modal>
+                   (thresholdChanged)="onThresholdChangedFromModal($event)"
+                   (applyOtsu)="onApplyOtsuFromModal()"></app-image-modal>
                    
   <app-convolution-modal *ngIf="showConvolutionModal"
                          [initialMatrix]="currentNodeForMatrix!.convolutionMatrix!"

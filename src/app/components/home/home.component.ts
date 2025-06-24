@@ -16,7 +16,7 @@ export interface PseudocodeStep {
   substeps: string[];
 }
 
-type NodeType = 'image' | 'editor-greyscale' | 'editor-threshold' | 'editor-histogram-equalization' | 'editor-convolution' | 'editor-add' | 'editor-difference';
+type NodeType = 'image' | 'editor-greyscale' | 'editor-threshold' | 'editor-histogram-equalization' | 'editor-convolution' | 'editor-add' | 'editor-difference' | 'editor-noise-reduction';
 
 @Component({
   selector: 'app-home',
@@ -49,6 +49,8 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
   public showPseudocodeModal = false;
   public pseudocodeSteps: PseudocodeStep[] = [];
   public pseudocodeNodeTitle: string = '';
+
+  public isSidebarCollapsed: boolean = false;
 
   private resizeObserver: ResizeObserver | null = null;
   private numteste = 0;
@@ -111,6 +113,10 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
     }
   }
 
+  toggleSidebar(): void {
+    this.isSidebarCollapsed = !this.isSidebarCollapsed;
+  }
+
   private updateSvgDimensions(): void {
     if (this.containerRef && this.svgCanvas) {
       const container = this.containerRef.nativeElement;
@@ -156,6 +162,10 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
         newNode.differenceSliderValue = 50;
       }
       
+      if (type === 'editor-noise-reduction') {
+        newNode.noiseReductionMode = 'median';
+      }
+      
       this.nodeManip.addNode(newNode);
       this.boxes = [...this.nodeManip.tree];
 
@@ -164,11 +174,72 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
       }
       return newNode;
   }
+
+    public addSobelDetector(): void {
+      const containerRect = this.containerRef.nativeElement.getBoundingClientRect();
+      const startX = Math.random() * (containerRect.width - 500); 
+      const startY = (Math.random() * (window.innerHeight - 300)) + window.scrollY;
+
+      const nodeWidth = 220;
+      const nodeSpacing = 40;
+
+      const sobelXNode = this.createAndAddNode('editor-convolution', startX, startY);
+      sobelXNode.convolutionMatrix = [[1, 0, -1], [2, 0, -2], [1, 0, -1]];
+      sobelXNode.matrixSize = 3;
+      sobelXNode.convolutionDivisor = 1;
+
+      const sobelYNode = this.createAndAddNode('editor-convolution', startX + nodeWidth + nodeSpacing, startY);
+      sobelYNode.convolutionMatrix = [[1, 2, 1], [0, 0, 0], [-1, -2, -1]];
+      sobelYNode.matrixSize = 3;
+      sobelYNode.convolutionDivisor = 1;
+
+      const addNodeY = startY + 150 + 50;
+      const addNodeX = startX + nodeWidth / 2 + nodeSpacing / 2;
+      const addNode = this.createAndAddNode('editor-add', addNodeX, addNodeY);
+      addNode.addOperationMode = 'root';
+      
+      this.nodeManip.addConnection(sobelXNode.id, addNode.id);
+      this.nodeManip.addConnection(sobelYNode.id, addNode.id);
+
+      setTimeout(() => this.drawConnections(), 0);
+  }
+
+  public addGaussianBlurNode(): void {
+    const containerRect = this.containerRef.nativeElement.getBoundingClientRect();
+    const randomX = Math.random() * (containerRect.width - 220);
+    const randomY = (Math.random() * (window.innerHeight - 150)) + window.scrollY;
+
+    const blurNode = this.createAndAddNode('editor-convolution', randomX, randomY);
+    blurNode.convolutionMatrix = [[1,4,7,4,1],[4,16,26,16,4],[7,26,41,26,7],[4,16,26,16,4],[1,4,7,4,1]];
+    blurNode.matrixSize = 5;
+    blurNode.convolutionDivisor = 273;
+  }
+
+  public addBoxBlurNode(): void {
+    const containerRect = this.containerRef.nativeElement.getBoundingClientRect();
+    const randomX = Math.random() * (containerRect.width - 220);
+    const randomY = (Math.random() * (window.innerHeight - 150)) + window.scrollY;
+
+    const blurNode = this.createAndAddNode('editor-convolution', randomX, randomY);
+    blurNode.convolutionMatrix = [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]];
+    blurNode.matrixSize = 5;
+    blurNode.convolutionDivisor = 25;
+  }
+
+  public addLaplacianNode(): void {
+    const containerRect = this.containerRef.nativeElement.getBoundingClientRect();
+    const randomX = Math.random() * (containerRect.width - 220);
+    const randomY = (Math.random() * (window.innerHeight - 150)) + window.scrollY;
+
+    const laplacianNode = this.createAndAddNode('editor-convolution', randomX, randomY);
+    laplacianNode.convolutionMatrix = [[0,-1,0],[-1,5,-1],[0,-1,0]];
+    laplacianNode.matrixSize = 3;
+    laplacianNode.convolutionDivisor = 1;
+  }
   
   public addNodeFromSidebar(type: NodeType): void {
       const containerRect = this.containerRef.nativeElement.getBoundingClientRect();
       const randomX = Math.random() * (containerRect.width - 220);
-      console.log('>>  window.scrollY',  window.scrollY)
       const randomY = (Math.random() * (window.innerHeight - 150)) + window.scrollY;
       this.createAndAddNode(type, randomX, randomY);
   }
@@ -199,17 +270,19 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
         { type: 'editor-greyscale', label: 'Greyscale' },
         { type: 'editor-threshold', label: 'Threshold' },
         { type: 'editor-histogram-equalization', label: 'Histogram Equalization' },
-        { type: 'editor-convolution', label: 'Convolution'}
+        { type: 'editor-convolution', label: 'Convolution'},
+        { type: 'editor-noise-reduction', label: 'Noise Reduction'}
     ];
 
     const rules: { [key in NodeType]?: NodeType[] } = {
-        'image': ['editor-greyscale', 'editor-histogram-equalization', 'editor-convolution', 'editor-add', 'editor-difference'],
-        'editor-greyscale': ['editor-threshold', 'editor-histogram-equalization', 'editor-convolution', 'editor-add', 'editor-difference'],
-        'editor-threshold': ['editor-histogram-equalization', 'editor-convolution', 'editor-add', 'editor-difference'],
-        'editor-histogram-equalization': ['editor-greyscale', 'editor-threshold', 'editor-convolution', 'editor-add', 'editor-difference'],
-        'editor-convolution': ['editor-greyscale', 'editor-threshold', 'editor-histogram-equalization', 'editor-convolution', 'editor-add', 'editor-difference'],
-        'editor-add': ['editor-greyscale', 'editor-threshold', 'editor-histogram-equalization', 'editor-convolution', 'editor-add', 'editor-difference'],
-        'editor-difference': ['editor-greyscale', 'editor-threshold', 'editor-histogram-equalization', 'editor-convolution', 'editor-add', 'editor-difference'],
+        'image': ['editor-greyscale', 'editor-histogram-equalization', 'editor-convolution', 'editor-add', 'editor-difference', 'editor-noise-reduction'],
+        'editor-greyscale': ['editor-threshold', 'editor-histogram-equalization', 'editor-convolution', 'editor-add', 'editor-difference', 'editor-noise-reduction'],
+        'editor-threshold': ['editor-histogram-equalization', 'editor-convolution', 'editor-add', 'editor-difference', 'editor-noise-reduction'],
+        'editor-histogram-equalization': ['editor-greyscale', 'editor-threshold', 'editor-convolution', 'editor-add', 'editor-difference', 'editor-noise-reduction'],
+        'editor-convolution': ['editor-greyscale', 'editor-threshold', 'editor-histogram-equalization', 'editor-convolution', 'editor-add', 'editor-difference', 'editor-noise-reduction'],
+        'editor-add': ['editor-greyscale', 'editor-threshold', 'editor-histogram-equalization', 'editor-convolution', 'editor-add', 'editor-difference', 'editor-noise-reduction'],
+        'editor-difference': ['editor-greyscale', 'editor-threshold', 'editor-histogram-equalization', 'editor-convolution', 'editor-add', 'editor-difference', 'editor-noise-reduction'],
+        'editor-noise-reduction': ['editor-greyscale', 'editor-threshold', 'editor-histogram-equalization', 'editor-convolution', 'editor-add', 'editor-difference', 'editor-noise-reduction'],
     };
 
     const validTypes = rules[node.type] || [];
@@ -392,6 +465,28 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
     this.updateEditorNode(node);
   }
 
+  public async applyOtsuThreshold(node: treeNode): Promise<void> {
+    if (node.type !== 'editor-threshold' || node.parentIds.length === 0) {
+      alert("Otsu's method can only be applied to a Threshold node with a connected parent.");
+      return;
+    }
+    
+    const parentNode = this.boxes.find(n => n.id === node.parentIds[0]);
+    if (!parentNode || !parentNode.imageSrc) {
+      alert("Parent node does not have an image to process.");
+      return;
+    }
+
+    try {
+      const optimalThreshold = await this.imageProcessor.calculateOtsuThreshold(parentNode.imageSrc);
+      node.threshold = optimalThreshold;
+      await this.updateEditorNode(node);
+    } catch (error) {
+      console.error("Failed to apply Otsu's method:", error);
+      alert("An error occurred while calculating the optimal threshold.");
+    }
+  }
+
   public onDifferenceSliderChange(node: treeNode): void {
     // Placeholder for direct changes on the node
   }
@@ -400,6 +495,14 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
     if (event) event.stopPropagation();
     if (node.type === 'editor-add') {
       node.addOperationMode = mode;
+      await this.updateEditorNode(node);
+    }
+  }
+
+  public async setNoiseReductionMode(node: treeNode, mode: 'min' | 'median' | 'max', event?: MouseEvent) {
+    if (event) event.stopPropagation();
+    if (node.type === 'editor-noise-reduction') {
+      node.noiseReductionMode = mode;
       await this.updateEditorNode(node);
     }
   }
@@ -471,6 +574,9 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
                 if (editorNode.convolutionMatrix) {
                   processedImage = await this.imageProcessor.applyConvolution(sourceImage, editorNode.convolutionMatrix, editorNode.convolutionDivisor || 1);
                 }
+                break;
+              case 'editor-noise-reduction':
+                processedImage = await this.imageProcessor.applyNoiseReduction(sourceImage, editorNode.noiseReductionMode || 'median');
                 break;
             }
           }
@@ -583,6 +689,18 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
       await this.setAddOperationMode(this.currentNodeForModal, mode);
     }
   }
+  
+  public async onNoiseReductionChanged(mode: 'min' | 'median' | 'max') {
+    if (this.currentNodeForModal && this.currentNodeForModal.type === 'editor-noise-reduction') {
+      await this.setNoiseReductionMode(this.currentNodeForModal, mode);
+    }
+  }
+
+  public async onApplyOtsuFromModal(): Promise<void> {
+    if (this.currentNodeForModal) {
+      await this.applyOtsuThreshold(this.currentNodeForModal);
+    }
+  }
 
   public async onThresholdChangedFromModal(value: number) {
     if (this.currentNodeForModal && this.currentNodeForModal.type === 'editor-threshold') {
@@ -609,9 +727,16 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
       case 'editor-greyscale': return 'Greyscale';
       case 'editor-threshold': return 'Threshold';
       case 'editor-histogram-equalization': return 'Hist. Equalization';
-      case 'editor-convolution': return 'Convolution Filter';
+      case 'editor-convolution': 
+        if(JSON.stringify(box.convolutionMatrix) === JSON.stringify([[1, 0, -1], [2, 0, -2], [1, 0, -1]])) return 'Sobel X';
+        if(JSON.stringify(box.convolutionMatrix) === JSON.stringify([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])) return 'Sobel Y';
+        if(JSON.stringify(box.convolutionMatrix) === JSON.stringify([[1,4,7,4,1],[4,16,26,16,4],[7,26,41,26,7],[4,16,26,16,4],[1,4,7,4,1]]) && box.convolutionDivisor === 273) return 'Gaussian Blur (5x5)';
+        if(JSON.stringify(box.convolutionMatrix) === JSON.stringify([[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]) && box.convolutionDivisor === 25) return 'Box Blur (5x5)';
+        if(JSON.stringify(box.convolutionMatrix) === JSON.stringify([[0,-1,0],[-1,5,-1],[0,-1,0]]) && box.convolutionDivisor === 1) return 'Laplacian Sharpen';
+        return 'Convolution Filter';
       case 'editor-add': return 'Add (2 Images)';
       case 'editor-difference': return 'Difference (2 Images)';
+      case 'editor-noise-reduction': return 'Noise Reduction';
       default: return 'Node';
     }
   }
@@ -679,12 +804,32 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
         case 'editor-threshold':
           step.description = `Apply a binary threshold to image '${getParentVar(node.parentIds[0])}' and store the result in '${outputVar}'.`;
           step.substeps = [
-            `Define a threshold value: ${node.threshold}.`,
+            `Define a threshold value: ${node.threshold}. (This can be set manually or automatically using Otsu's method).`,
             'For each pixel in the input image (typically greyscale):',
             '  Read the intensity value of the pixel.',
             `  If the value is less than ${node.threshold}, set the output pixel to black (0).`,
             '  Otherwise, set the output pixel to white (255).'
           ];
+          // NEW: Add a separate, detailed step explaining Otsu's method.
+          if (processingOrder.some(p => p.type === 'editor-threshold')) {
+            const otsuStep: PseudocodeStep = {
+              title: "About: Otsu's Method (Automatic Thresholding)",
+              description: "Otsu's method is an algorithm used to automatically find an optimal threshold value for a greyscale image. It works by iterating through all possible thresholds and selecting the one that maximizes the separability (variance) between the two classes of pixels (foreground and background).",
+              substeps: [
+                "1. Calculate a histogram of the image's greyscale intensity levels (0-255).",
+                "2. For each possible threshold 't' from 0 to 255:",
+                "   a. Split the histogram into two groups: pixels below or equal to 't' (background) and pixels above 't' (foreground).",
+                "   b. Calculate the weight of each group (number of pixels in group / total pixels).",
+                "   c. Calculate the mean intensity of each group.",
+                "   d. Calculate the 'between-class variance' using the weights and means. This value measures how well-separated the two groups are.",
+                "3. The threshold 't' that results in the maximum 'between-class variance' is chosen as the optimal threshold."
+              ]
+            };
+            // Add the Otsu explanation as the next step if it's not already there
+            if (!steps.some(s => s.title.includes("Otsu's Method"))) {
+              steps.push(otsuStep);
+            }
+          }
           break;
 
         case 'editor-histogram-equalization':
@@ -745,11 +890,31 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
             ];
           }
           break;
+        
+        case 'editor-noise-reduction':
+            step.description = `Apply a ${node.noiseReductionMode} filter to image '${getParentVar(node.parentIds[0])}' and store the result in '${outputVar}'.`;
+            step.substeps = [
+              'Create a new blank output image.',
+              'For each pixel in the input image (excluding borders):',
+              '  Create a list of pixel values from the 3x3 neighborhood around the current pixel for each color channel (R, G, B).',
+              `  For each channel, find the ${node.noiseReductionMode} value in the list.`,
+              '  Set the R, G, B values of the output pixel to the calculated min, median, or max values.'
+            ];
+            break;
       }
       if (step.description) {
         steps.push(step);
       }
     }
+    // This ensures the Otsu explanation is only added once at the end of all processing steps.
+    if (processingOrder.some(p => p.type === 'editor-threshold')) {
+      const otsuStepIndex = steps.findIndex(s => s.title.includes("Otsu's Method"));
+      if (otsuStepIndex !== -1) {
+        const otsuStep = steps.splice(otsuStepIndex, 1)[0];
+        steps.push(otsuStep);
+      }
+    }
+
     return steps;
   }
 }

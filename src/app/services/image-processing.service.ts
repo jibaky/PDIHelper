@@ -8,7 +8,167 @@ export class ImageProcessingService {
   constructor() { }
 
   /**
-   * NEW: Combines two images pixel by pixel based on a specified operation.
+   * NEW: Calculates the optimal threshold for an image using Otsu's method.
+   * @param base64Image The base64 data URL of the source image.
+   * @returns A Promise that resolves with the optimal threshold value (0-255).
+   */
+  async calculateOtsuThreshold(base64Image: string): Promise<number> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject(new Error('Failed to get 2D context.'));
+
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+
+        // 1. Create a grayscale histogram
+        const histogram = new Array(256).fill(0);
+        for (let i = 0; i < data.length; i += 4) {
+          // Using luminance formula for grayscale conversion
+          const greyscale = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+          histogram[greyscale]++;
+        }
+
+        const totalPixels = img.width * img.height;
+        let sum = 0;
+        for (let i = 0; i < 256; i++) {
+          sum += i * histogram[i];
+        }
+
+        let sumB = 0;
+        let wB = 0; // weight background
+        let wF = 0; // weight foreground
+
+        let varMax = 0;
+        let threshold = 0;
+
+        // 2. Iterate through all possible thresholds
+        for (let t = 0; t < 256; t++) {
+          wB += histogram[t];
+          if (wB === 0) continue;
+
+          wF = totalPixels - wB;
+          if (wF === 0) break;
+
+          sumB += t * histogram[t];
+
+          const mB = sumB / wB; // mean background
+          const mF = (sum - sumB) / wF; // mean foreground
+
+          // 3. Calculate Between-Class Variance
+          const varBetween = wB * wF * (mB - mF) * (mB - mF);
+
+          // 4. Check if new maximum found
+          if (varBetween > varMax) {
+            varMax = varBetween;
+            threshold = t;
+          }
+        }
+        
+        resolve(threshold);
+      };
+      img.onerror = (e) => reject(new Error("Failed to load image for Otsu's method calculation."));
+      img.src = base64Image;
+    });
+  }
+
+  /**
+   * NEW: Applies a noise reduction filter to an image using one of several methods.
+   * @param base64Image The base64 data URL of the source image.
+   * @param operation The noise reduction operation: 'min', 'median', or 'max'.
+   * @returns A Promise that resolves with the base64 data URL of the resulting image.
+   */
+  applyNoiseReduction(base64Image: string, operation: 'min' | 'median' | 'max'): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.onload = () => {
+        const kernelSize = 3;
+        const radius = Math.floor(kernelSize / 2);
+
+        const newWidth = img.width - (2 * radius);
+        const newHeight = img.height - (2 * radius);
+        
+        if (newWidth <= 0 || newHeight <= 0) {
+          return reject(new Error('Resulting image has zero or negative dimensions.'));
+        }
+        
+        const srcCanvas = document.createElement('canvas');
+        srcCanvas.width = img.width;
+        srcCanvas.height = img.height;
+        const srcCtx = srcCanvas.getContext('2d');
+        if (!srcCtx) return reject(new Error('Failed to get 2D context.'));
+        srcCtx.drawImage(img, 0, 0);
+        const srcData = srcCtx.getImageData(0, 0, img.width, img.height).data;
+        
+        const destCanvas = document.createElement('canvas');
+        destCanvas.width = newWidth;
+        destCanvas.height = newHeight;
+        const destCtx = destCanvas.getContext('2d');
+        if (!destCtx) return reject(new Error('Failed to get 2D context for destination.'));
+        const destImageData = destCtx.createImageData(newWidth, newHeight);
+        const destData = destImageData.data;
+
+        for (let y = 0; y < newHeight; y++) {
+          for (let x = 0; x < newWidth; x++) {
+            const neighborhoodR: number[] = [];
+            const neighborhoodG: number[] = [];
+            const neighborhoodB: number[] = [];
+
+            for (let ky = -radius; ky <= radius; ky++) {
+              for (let kx = -radius; kx <= radius; kx++) {
+                const pixelY = y + radius + ky;
+                const pixelX = x + radius + kx;
+                const srcIndex = (pixelY * img.width + pixelX) * 4;
+                
+                neighborhoodR.push(srcData[srcIndex]);
+                neighborhoodG.push(srcData[srcIndex + 1]);
+                neighborhoodB.push(srcData[srcIndex + 2]);
+              }
+            }
+
+            let r = 0, g = 0, b = 0;
+            if (operation === 'median') {
+              neighborhoodR.sort((a, b) => a - b);
+              neighborhoodG.sort((a, b) => a - b);
+              neighborhoodB.sort((a, b) => a - b);
+              const mid = Math.floor(neighborhoodR.length / 2);
+              r = neighborhoodR[mid];
+              g = neighborhoodG[mid];
+              b = neighborhoodB[mid];
+            } else if (operation === 'min') {
+              r = Math.min(...neighborhoodR);
+              g = Math.min(...neighborhoodG);
+              b = Math.min(...neighborhoodB);
+            } else { // max
+              r = Math.max(...neighborhoodR);
+              g = Math.max(...neighborhoodG);
+              b = Math.max(...neighborhoodB);
+            }
+            
+            const destIndex = (y * newWidth + x) * 4;
+            destData[destIndex] = r;
+            destData[destIndex + 1] = g;
+            destData[destIndex + 2] = b;
+            destData[destIndex + 3] = 255;
+          }
+        }
+        destCtx.putImageData(destImageData, 0, 0);
+        resolve(destCanvas.toDataURL('image/png'));
+      };
+      img.onerror = (e) => reject(new Error('Failed to load image for noise reduction.'));
+      img.src = base64Image;
+    });
+  }
+
+  /**
+   * Combines two images pixel by pixel based on a specified operation.
    * @param base64ImageA The base64 data URL of the first source image.
    * @param base64ImageB The base64 data URL of the second source image.
    * @param operation The operation to perform: 'add', 'average', or 'rms'.
