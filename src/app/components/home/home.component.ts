@@ -8,6 +8,7 @@ import { ImageProcessingService } from '../../services/image-processing.service'
 import { FormsModule } from '@angular/forms';
 import { ConvolutionModalComponent } from '../../components/convolution-modal/convolution-modal.component';
 import { PseudocodeModalComponent } from '../../components/pseudocode-modal/pseudocode-modal.component';
+import { MorphologyModalComponent, MorphologySettings } from '../../components/morphology-modal/morphology-modal.component';
 
 // Interface for structured pseudocode steps
 export interface PseudocodeStep {
@@ -16,11 +17,11 @@ export interface PseudocodeStep {
   substeps: string[];
 }
 
-type NodeType = 'image' | 'editor-greyscale' | 'editor-threshold' | 'editor-histogram-equalization' | 'editor-convolution' | 'editor-add' | 'editor-difference' | 'editor-noise-reduction';
+type NodeType = 'image' | 'editor-greyscale' | 'editor-threshold' | 'editor-histogram-equalization' | 'editor-convolution' | 'editor-add' | 'editor-difference' | 'editor-noise-reduction' | 'editor-morphology' | 'editor-skeletonization';
 
 @Component({
   selector: 'app-home',
-  imports: [NgFor, NgIf, FormsModule, ImageLoaderComponent, ImageModalComponent, ConvolutionModalComponent, NgClass, PseudocodeModalComponent],
+  imports: [NgFor, NgIf, FormsModule, ImageLoaderComponent, ImageModalComponent, ConvolutionModalComponent, NgClass, PseudocodeModalComponent, MorphologyModalComponent],
   standalone: true,
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
@@ -43,8 +44,10 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
 
   public showImageModal: boolean = false;
   public showConvolutionModal: boolean = false;
+  public showMorphologyModal: boolean = false;
   public currentNodeForMatrix: treeNode | null = null;
   public currentNodeForModal: treeNode | null = null;
+  public currentNodeForMorphology: treeNode | null = null;
 
   public showPseudocodeModal = false;
   public pseudocodeSteps: PseudocodeStep[] = [];
@@ -166,6 +169,12 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
         newNode.noiseReductionMode = 'median';
       }
       
+      if (type === 'editor-morphology') {
+        newNode.morphologyOperation = 'dilation';
+        newNode.structuringElementShape = 'square';
+        newNode.structuringElementSize = 3;
+      }
+      
       this.nodeManip.addNode(newNode);
       this.boxes = [...this.nodeManip.tree];
 
@@ -248,8 +257,16 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
       const newX = parentNode.x;
       const newY = parentNode.y + (parentNode.height * (parentNode.scale || 1)) + 50;
       
-      const newNode = this.createAndAddNode(childType, newX, newY, parentNode);
+      // Create a temporary node for the compatibility check without adding it to the tree
+      const tempNodeForCheck: treeNode = { 
+          id: 'temp', 
+          type: childType,
+          x:0, y:0, width:0, height:0, connections:[], parentIds: [] // Dummy properties
+      };
+      this.checkConnectionCompatibility(parentNode, tempNodeForCheck);
 
+      // Create the real node and establish the connection
+      const newNode = this.createAndAddNode(childType, newX, newY, parentNode);
       
       await this.updateEditorNode(newNode);
       this.drawConnections();
@@ -263,7 +280,17 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
     node.isAddMenuOpen = !currentMenuState;
   }
 
+  /**
+   * MODIFIED: Reworked to allow almost any node to be a child, with exceptions.
+   * 'image' nodes cannot be children.
+   * 'editor-difference' nodes cannot have children.
+   */
   public getValidChildrenTypes(node: treeNode): {type: NodeType, label: string}[] {
+    // MODIFIED: 'editor-difference' is a terminal node and cannot have children.
+    if (node.type === 'editor-difference') {
+        return [];
+    }
+
     const allPossibleChildren: {type: NodeType, label: string}[] = [
         { type: 'editor-add', label: 'Add (2 Images)'},
         { type: 'editor-difference', label: 'Difference (2 Images)'},
@@ -271,24 +298,63 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
         { type: 'editor-threshold', label: 'Threshold' },
         { type: 'editor-histogram-equalization', label: 'Histogram Equalization' },
         { type: 'editor-convolution', label: 'Convolution'},
-        { type: 'editor-noise-reduction', label: 'Noise Reduction'}
+        { type: 'editor-noise-reduction', label: 'Noise Reduction'},
+        { type: 'editor-morphology', label: 'Morphology'},
+        { type: 'editor-skeletonization', label: 'Skeletonization'}
     ];
-
-    const rules: { [key in NodeType]?: NodeType[] } = {
-        'image': ['editor-greyscale', 'editor-histogram-equalization', 'editor-convolution', 'editor-add', 'editor-difference', 'editor-noise-reduction'],
-        'editor-greyscale': ['editor-threshold', 'editor-histogram-equalization', 'editor-convolution', 'editor-add', 'editor-difference', 'editor-noise-reduction'],
-        'editor-threshold': ['editor-histogram-equalization', 'editor-convolution', 'editor-add', 'editor-difference', 'editor-noise-reduction'],
-        'editor-histogram-equalization': ['editor-greyscale', 'editor-threshold', 'editor-convolution', 'editor-add', 'editor-difference', 'editor-noise-reduction'],
-        'editor-convolution': ['editor-greyscale', 'editor-threshold', 'editor-histogram-equalization', 'editor-convolution', 'editor-add', 'editor-difference', 'editor-noise-reduction'],
-        'editor-add': ['editor-greyscale', 'editor-threshold', 'editor-histogram-equalization', 'editor-convolution', 'editor-add', 'editor-difference', 'editor-noise-reduction'],
-        'editor-difference': ['editor-greyscale', 'editor-threshold', 'editor-histogram-equalization', 'editor-convolution', 'editor-add', 'editor-difference', 'editor-noise-reduction'],
-        'editor-noise-reduction': ['editor-greyscale', 'editor-threshold', 'editor-histogram-equalization', 'editor-convolution', 'editor-add', 'editor-difference', 'editor-noise-reduction'],
-    };
-
-    const validTypes = rules[node.type] || [];
-    return allPossibleChildren.filter(child => validTypes.includes(child.type));
+    
+    // Returns all possible children for any valid parent node.
+    return allPossibleChildren;
   }
+  
+  /**
+   * NEW: This function checks for non-ideal connections and alerts the user.
+   * It does not prevent the connection, only warns about potential issues.
+   * @param parentNode The node that will be the parent in the connection.
+   * @param childNode The node that will be the child.
+   */
+  private checkConnectionCompatibility(parentNode: treeNode, childNode: treeNode): void {
+    const parentColorType = parentNode.colorType;
 
+    // If the parent has no image/colorType yet, we can't make a determination.
+    if (!parentColorType) {
+      return;
+    }
+
+    switch (childNode.type) {
+      case 'editor-greyscale':
+        if (parentColorType === 'greyscale' || parentColorType === 'binary') {
+          alert("Warning: Applying a Greyscale filter to an image that is already greyscale or binary will have no effect.");
+        }
+        break;
+      
+      case 'editor-threshold':
+        if (parentColorType === 'color') {
+          alert("Warning: Thresholding works best on greyscale images. The input will be converted to greyscale, which might lead to unexpected results if the color information is important.");
+        } else if (parentColorType === 'binary') {
+          alert("Warning: Applying a threshold to an already binary image will likely have no effect or produce a solid black or white image.");
+        }
+        break;
+
+      case 'editor-histogram-equalization':
+        if (parentColorType === 'binary') {
+          alert("Warning: Histogram Equalization has no effect on binary (black and white) images as there are only two color values.");
+        }
+        break;
+
+      case 'editor-morphology':
+        if (parentColorType === 'color' || parentColorType === 'greyscale') {
+          alert("Warning: Morphological operations (like Dilation and Erosion) are designed for binary images. Applying them to color or greyscale images may produce unexpected results.");
+        }
+        break;
+
+      case 'editor-skeletonization':
+         if (parentColorType === 'color' || parentColorType === 'greyscale') {
+          alert("Warning: Skeletonization is designed for binary images. Applying it to color or greyscale inputs may produce unexpected or empty results.");
+        }
+        break;
+    }
+  }
 
   private closeAllAddMenus() {
       this.boxes.forEach(b => b.isAddMenuOpen = false);
@@ -298,6 +364,17 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
     const node = this.boxes.find(n => n.id === nodeId);
     if (node && node.type === 'image') {
       node.imageSrc = imageUrl ? String(imageUrl) : undefined;
+      // Analyze and set the color type for the newly loaded image
+      if (node.imageSrc) {
+        try {
+          node.colorType = await this.imageProcessor.getImageColorType(node.imageSrc);
+        } catch (error) {
+          console.error("Failed to analyze image color type:", error);
+          node.colorType = undefined;
+        }
+      } else {
+        node.colorType = undefined;
+      }
       await this.updateChildEditors(node);
     }
   }
@@ -381,8 +458,18 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
     return { x: pointX, y: pointY };
   }
 
+  /**
+   * MODIFIED: Prevents starting a connection from a 'Difference' node.
+   */
   public startConnection(event: MouseEvent, node: treeNode): void {
     event.stopPropagation();
+
+    // MODIFIED: Add check to prevent 'editor-difference' from having children.
+    if (node.type === 'editor-difference') {
+        alert("A 'Difference' node is a terminal node and cannot be connected to a child.");
+        return;
+    }
+
     this.isConnecting = true;
     this.startNode = node;
 
@@ -408,12 +495,14 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
     if (this.isAncestor(destNode.id, sourceNode.id)) {
         alert(`Cannot connect nodes. This would create a cycle.`);
     } else {
+        this.checkConnectionCompatibility(sourceNode, destNode);
+        
         const success = this.nodeManip.addConnection(sourceNode.id, destNode.id);
         if (success) {
             await this.updateEditorNode(destNode);
             this.drawConnections();
         } else {
-           alert(`Connection failed. The target node may already have the maximum number of parents.`);
+           alert(`Connection failed. The target node may already have the maximum number of parents or is an invalid type (e.g., Image Source).`);
         }
     }
     
@@ -511,6 +600,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
     if (editorNode.parentIds.length === 0) {
       editorNode.imageSrc = undefined;
       editorNode.imageSrcB = undefined;
+      editorNode.colorType = undefined; // Clear the color type
       await this.updateChildEditors(editorNode);
       this.drawConnections();
       return;
@@ -530,11 +620,6 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
               editorNode.addOperationMode || 'average'
             );
             if (processedImage === '') {
-              console.log('>> editorNode.parentIds', editorNode.parentIds)
-              editorNode.parentIds.map(el => {
-                console.log('>> parent', editorNode.id, el)
-              })
-
               editorNode.parentIds.forEach(parentId => {
                   const parentNode = this.nodeManip.tree.find(n => n.id === parentId);
                   if (parentNode) {
@@ -578,6 +663,19 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
               case 'editor-noise-reduction':
                 processedImage = await this.imageProcessor.applyNoiseReduction(sourceImage, editorNode.noiseReductionMode || 'median');
                 break;
+              case 'editor-morphology':
+                 if (editorNode.morphologyOperation && editorNode.structuringElementShape && editorNode.structuringElementSize) {
+                    processedImage = await this.imageProcessor.applyMorphology(
+                        sourceImage,
+                        editorNode.morphologyOperation,
+                        editorNode.structuringElementShape,
+                        editorNode.structuringElementSize
+                    );
+                 }
+                 break;
+              case 'editor-skeletonization':
+                processedImage = await this.imageProcessor.applyZhangSuenSkeletonization(sourceImage);
+                break;
             }
           }
       }
@@ -586,10 +684,18 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
         editorNode.imageSrc = processedImage;
       }
       
+      // Analyze and set color type for the processed image
+      if (editorNode.imageSrc) {
+        editorNode.colorType = await this.imageProcessor.getImageColorType(editorNode.imageSrc);
+      } else {
+        editorNode.colorType = undefined;
+      }
+      
       await this.updateChildEditors(editorNode);
     } catch (error) {
       console.error("Image processing failed:", error);
       editorNode.imageSrc = undefined;
+      editorNode.colorType = undefined; // Also clear on error
       await this.updateChildEditors(editorNode);
     }
     this.drawConnections();
@@ -684,6 +790,29 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
     this.closeConvolutionModal();
   }
 
+  public openMorphologyModal(node: treeNode, event: MouseEvent): void {
+    event.stopPropagation();
+    if (node.type === 'editor-morphology') {
+      this.currentNodeForMorphology = node;
+      this.showMorphologyModal = true;
+    }
+  }
+
+  public closeMorphologyModal(): void {
+    this.showMorphologyModal = false;
+    this.currentNodeForMorphology = null;
+  }
+
+  public async onSaveMorphologySettings(settings: MorphologySettings): Promise<void> {
+    if (this.currentNodeForMorphology) {
+      this.currentNodeForMorphology.morphologyOperation = settings.operation;
+      this.currentNodeForMorphology.structuringElementShape = settings.shape;
+      this.currentNodeForMorphology.structuringElementSize = settings.size;
+      await this.updateEditorNode(this.currentNodeForMorphology);
+    }
+    this.closeMorphologyModal();
+  }
+
   public async onAddOperationChanged(mode: 'add' | 'average' | 'root') {
     if (this.currentNodeForModal && this.currentNodeForModal.type === 'editor-add') {
       await this.setAddOperationMode(this.currentNodeForModal, mode);
@@ -737,6 +866,8 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
       case 'editor-add': return 'Add (2 Images)';
       case 'editor-difference': return 'Difference (2 Images)';
       case 'editor-noise-reduction': return 'Noise Reduction';
+      case 'editor-morphology': return 'Morphology';
+      case 'editor-skeletonization': return 'Skeletonization';
       default: return 'Node';
     }
   }
@@ -810,7 +941,6 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
             `  If the value is less than ${node.threshold}, set the output pixel to black (0).`,
             '  Otherwise, set the output pixel to white (255).'
           ];
-          // NEW: Add a separate, detailed step explaining Otsu's method.
           if (processingOrder.some(p => p.type === 'editor-threshold')) {
             const otsuStep: PseudocodeStep = {
               title: "About: Otsu's Method (Automatic Thresholding)",
@@ -825,7 +955,6 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
                 "3. The threshold 't' that results in the maximum 'between-class variance' is chosen as the optimal threshold."
               ]
             };
-            // Add the Otsu explanation as the next step if it's not already there
             if (!steps.some(s => s.title.includes("Otsu's Method"))) {
               steps.push(otsuStep);
             }
@@ -901,12 +1030,55 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
               '  Set the R, G, B values of the output pixel to the calculated min, median, or max values.'
             ];
             break;
+
+        case 'editor-morphology':
+            step.description = `Apply a morphological '${node.morphologyOperation}' operation to the binary image '${getParentVar(node.parentIds[0])}' using a ${node.structuringElementSize}x${node.structuringElementSize} '${node.structuringElementShape}' structuring element. The result is stored in '${outputVar}'.`;
+            if (node.morphologyOperation === 'dilation') {
+                step.substeps = [
+                    'Create a new blank output image.',
+                    'For each pixel in the input image:',
+                    '  Place the structuring element (SE) centered on the pixel.',
+                    '  If ANY pixel under the SE in the input image is white (foreground),',
+                    '    Then set the corresponding output pixel to white.',
+                    '  Else, set the output pixel to black.'
+                ];
+            } else { // Erosion
+                step.substeps = [
+                    'Create a new blank output image.',
+                    'For each pixel in the input image:',
+                    '  Place the structuring element (SE) centered on the pixel.',
+                    '  If ALL pixels under the SE in the input image are white (foreground),',
+                    '    Then set the corresponding output pixel to white.',
+                    '  Else (if any pixel is black), set the output pixel to black.'
+                ];
+            }
+            break;
+            
+        case 'editor-skeletonization':
+          step.description = `Apply the Zhang-Suen thinning algorithm to the binary image '${getParentVar(node.parentIds[0])}' to produce a one-pixel-wide skeleton. The result is stored in '${outputVar}'.`;
+          step.substeps = [
+              "Initialize a loop that continues as long as pixels are being removed in an iteration.",
+              "Step 1: Identify and mark pixels for deletion based on a set of conditions:",
+              "  a. The pixel must be a foreground pixel (white).",
+              "  b. It must have between 2 and 6 foreground neighbors.",
+              "  c. The number of 0-to-1 transitions in its ordered neighbors must be exactly 1.",
+              "  d. At least one of its North, East, or South neighbors must be background.",
+              "  e. At least one of its East, South, or West neighbors must be background.",
+              "Remove all marked pixels from the image.",
+              "Step 2: Identify and mark pixels for deletion with a slightly different set of conditions:",
+              "  a, b, c are the same as Step 1.",
+              "  d. At least one of its North, East, or West neighbors must be background.",
+              "  e. At least one of its North, South, or West neighbors must be background.",
+              "Remove all marked pixels from the image.",
+              "Repeat both steps until no pixels are removed in a full iteration.",
+          ];
+          break;
       }
       if (step.description) {
         steps.push(step);
       }
     }
-    // This ensures the Otsu explanation is only added once at the end of all processing steps.
+
     if (processingOrder.some(p => p.type === 'editor-threshold')) {
       const otsuStepIndex = steps.findIndex(s => s.title.includes("Otsu's Method"));
       if (otsuStepIndex !== -1) {

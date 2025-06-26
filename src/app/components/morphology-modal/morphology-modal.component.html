@@ -1,0 +1,32 @@
+<div class="modal-overlay" (click)="onCancel()">
+  <div class="modal-content" (click)="onContentClick($event)">
+    <h3>Morphology Settings</h3>
+
+    <div class="control-group">
+      <label>Operation:</label>
+      <div class="button-group">
+        <button [class.active]="settings.operation === 'dilation'" (click)="settings.operation = 'dilation'">Dilation</button>
+        <button [class.active]="settings.operation === 'erosion'" (click)="settings.operation = 'erosion'">Erosion</button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Structuring Element Shape:</label>
+      <div class="button-group">
+        <button [class.active]="settings.shape === 'square'" (click)="settings.shape = 'square'">Square</button>
+        <button [class.active]="settings.shape === 'circle'" (click)="settings.shape = 'circle'">Circle</button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label for="elementSize">{{ settings.shape === 'square' ? 'Side Length:' : 'Diameter:' }}</label>
+      <input id="elementSize" type="number" [(ngModel)]="settings.size" min="1" step="2">
+      <span class="info-text">(must be an odd number)</span>
+    </div>
+
+    <div class="modal-actions">
+      <button class="cancel-btn" (click)="onCancel()">Cancel</button>
+      <button class="save-btn" (click)="onSave()">Save and Apply</button>
+    </div>
+  </div>
+</div>

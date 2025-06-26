@@ -14,6 +14,8 @@
       <button (click)="addNodeFromSidebar('editor-histogram-equalization')">Equalization Node</button>
       <button (click)="addNodeFromSidebar('editor-convolution')">Convolution Node</button>
       <button (click)="addNodeFromSidebar('editor-noise-reduction')">Noise Reduction</button>
+      <button (click)="addNodeFromSidebar('editor-morphology')">Morphology Node</button>
+      <button (click)="addNodeFromSidebar('editor-skeletonization')">Skeletonization Node</button>
       <!-- Preset Buttons -->
       <button (click)="addGaussianBlurNode()">Gaussian Blur</button>
       <button (click)="addBoxBlurNode()">Box Blur</button>
@@ -40,7 +42,9 @@
             'editor-convolution-box': box.type === 'editor-convolution',
             'editor-add-box': box.type === 'editor-add',
             'editor-difference-box': box.type === 'editor-difference',
-            'editor-noise-reduction-box': box.type === 'editor-noise-reduction'
+            'editor-noise-reduction-box': box.type === 'editor-noise-reduction',
+            'editor-morphology-box': box.type === 'editor-morphology',
+            'editor-skeletonization-box': box.type === 'editor-skeletonization'
          }"
          [style.left.px]="box.x"
          [style.top.px]="box.y"
@@ -59,7 +63,8 @@
       <div class="delete-icon" (click)="deleteNode(box, $event)">&times;</div>
       <div class="box-title">{{ getBoxTitle(box) }}</div>
 
-      <div class="add-child-icon" (click)="toggleAddMenu(box, $event)">+</div>
+      <!-- MODIFIED: Conditionally hide the add child icon for difference nodes -->
+      <div *ngIf="box.type !== 'editor-difference'" class="add-child-icon" (click)="toggleAddMenu(box, $event)">+</div>
       <div class="add-child-menu" 
            *ngIf="box.isAddMenuOpen"
            (mousedown)="$event.stopPropagation()"
@@ -94,7 +99,6 @@
         <div class="node-controls-container" *ngIf="box.imageSrc">
           <div class="threshold-label">Threshold: {{box.threshold}}</div>
           <input type="range" min="0" max="255" class="threshold-slider" [(ngModel)]="box.threshold" (input)="onThresholdChange(box)" (mousedown)="$event.stopPropagation()">
-          <!-- NEW: Button to apply Otsu's method -->
           <button class="node-button" (click)="applyOtsuThreshold(box)">Apply Otsu</button>
           <button class="node-button" (click)="openImageModal($event, box)">View Image</button>
         </div>
@@ -164,8 +168,26 @@
         </div>
       </ng-container>
       
+      <!-- Morphology Node -->
+      <ng-container *ngIf="box.type === 'editor-morphology'">
+        <div *ngIf="!box.imageSrc" class="editor-box-placeholder"><span>(Connect to a Threshold node)</span></div>
+        <img *ngIf="box.imageSrc" [src]="box.imageSrc" alt="Processed Image" class="box-image-preview">
+        <div class="node-button-container" *ngIf="box.imageSrc">
+            <button class="node-button" (click)="openMorphologyModal(box, $event)">Edit Operation</button>
+            <button class="node-button" (click)="openImageModal($event, box)">View Image</button>
+        </div>
+      </ng-container>
+
+      <!-- Skeletonization Node -->
+      <ng-container *ngIf="box.type === 'editor-skeletonization'">
+        <div *ngIf="!box.imageSrc" class="editor-box-placeholder"><span>(Connect to a Threshold node)</span></div>
+        <img *ngIf="box.imageSrc" [src]="box.imageSrc" alt="Processed Image" class="box-image-preview">
+        <button *ngIf="box.imageSrc" class="node-button" (click)="openImageModal($event, box)">View Image</button>
+      </ng-container>
+
       <div class="connection-point top" (mouseup)="endConnection($event, box)"></div>
-      <div class="connection-point bottom" (mousedown)="startConnection($event, box)"></div>
+      <!-- MODIFIED: Conditionally hide the bottom connection point for difference nodes -->
+      <div *ngIf="box.type !== 'editor-difference'" class="connection-point bottom" (mousedown)="startConnection($event, box)"></div>
     </div>
   </div>
 
@@ -191,4 +213,10 @@
                         [nodeTitle]="pseudocodeNodeTitle"
                         (closeModal)="closePseudocodeModal()">
   </app-pseudocode-modal>
+
+  <app-morphology-modal *ngIf="showMorphologyModal"
+                      [node]="currentNodeForMorphology!"
+                      (closeModal)="closeMorphologyModal()"
+                      (saveSettings)="onSaveMorphologySettings($event)">
+  </app-morphology-modal>
 </div>

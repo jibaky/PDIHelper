@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { ColorType } from '../model/treeNode.model';
 
 @Injectable({
   providedIn: 'root'
@@ -8,10 +9,298 @@ export class ImageProcessingService {
   constructor() { }
 
   /**
-   * NEW: Calculates the optimal threshold for an image using Otsu's method.
+   * NEW: Analyzes an image to determine if it is color, greyscale, or binary.
    * @param base64Image The base64 data URL of the source image.
-   * @returns A Promise that resolves with the optimal threshold value (0-255).
+   * @returns A Promise that resolves with the ColorType ('color', 'greyscale', or 'binary').
    */
+  async getImageColorType(base64Image: string): Promise<ColorType> {
+    return new Promise((resolve, reject) => {
+      if (!base64Image) {
+        return reject(new Error('No image data provided for color analysis.'));
+      }
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        // The willReadFrequently hint can improve performance on some browsers
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (!ctx) return reject(new Error('Failed to get 2D context for color analysis.'));
+
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+
+        let isGreyscale = true;
+        let isBinary = true;
+
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+
+          // Check if the pixel is not greyscale
+          if (r !== g || r !== b) {
+            isGreyscale = false;
+            break; // Exit loop immediately, it's a color image
+          }
+          // If a greyscale pixel is not pure black or pure white, it's not binary
+          if (r !== 0 && r !== 255) {
+            isBinary = false;
+          }
+        }
+        
+        if (!isGreyscale) {
+          resolve('color');
+        } else {
+          if (isBinary) {
+            resolve('binary');
+          } else {
+            resolve('greyscale');
+          }
+        }
+      };
+      img.onerror = (e) => reject(new Error('Failed to load image for color analysis.'));
+      img.src = base64Image;
+    });
+  }
+
+  /**
+   * Applies the Zhang-Suen skeletonization algorithm to a binary image.
+   * @param base64Image The base64 data URL of the source binary image.
+   * @returns A Promise that resolves with the base64 data URL of the skeletonized image.
+   */
+  applyZhangSuenSkeletonization(base64Image: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "Anonymous";
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            if (!ctx) return reject(new Error('Failed to get 2D context.'));
+
+            ctx.drawImage(img, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+
+            // Create a binary matrix (1 for foreground, 0 for background)
+            let matrix: number[][] = Array.from({ length: img.height }, () => new Array(img.width).fill(0));
+            for (let y = 0; y < img.height; y++) {
+                for (let x = 0; x < img.width; x++) {
+                    const index = (y * img.width + x) * 4;
+                    // If pixel is not black, it's foreground
+                    if (data[index] > 127) {
+                        matrix[y][x] = 1;
+                    }
+                }
+            }
+
+            let pixelsToRemove: [number, number][] = [];
+            let changed = true;
+
+            while (changed) {
+                changed = false;
+
+                // Step 1
+                for (let y = 1; y < img.height - 1; y++) {
+                    for (let x = 1; x < img.width - 1; x++) {
+                        if (matrix[y][x] !== 1) continue;
+                        
+                        const p2 = matrix[y-1][x];
+                        const p3 = matrix[y-1][x+1];
+                        const p4 = matrix[y][x+1];
+                        const p5 = matrix[y+1][x+1];
+                        const p6 = matrix[y+1][x];
+                        const p7 = matrix[y+1][x-1];
+                        const p8 = matrix[y][x-1];
+                        const p9 = matrix[y-1][x-1];
+
+                        const B = p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9;
+                        if (B < 2 || B > 6) continue;
+
+                        let A = 0;
+                        if (p2 === 0 && p3 === 1) A++;
+                        if (p3 === 0 && p4 === 1) A++;
+                        if (p4 === 0 && p5 === 1) A++;
+                        if (p5 === 0 && p6 === 1) A++;
+                        if (p6 === 0 && p7 === 1) A++;
+                        if (p7 === 0 && p8 === 1) A++;
+                        if (p8 === 0 && p9 === 1) A++;
+                        if (p9 === 0 && p2 === 1) A++;
+                        if (A !== 1) continue;
+
+                        if (p2 * p4 * p6 !== 0) continue;
+                        if (p4 * p6 * p8 !== 0) continue;
+
+                        pixelsToRemove.push([y, x]);
+                    }
+                }
+
+                if (pixelsToRemove.length > 0) {
+                    changed = true;
+                    pixelsToRemove.forEach(([y, x]) => matrix[y][x] = 0);
+                    pixelsToRemove = [];
+                }
+
+                // Step 2
+                for (let y = 1; y < img.height - 1; y++) {
+                    for (let x = 1; x < img.width - 1; x++) {
+                        if (matrix[y][x] !== 1) continue;
+
+                        const p2 = matrix[y-1][x];
+                        const p3 = matrix[y-1][x+1];
+                        const p4 = matrix[y][x+1];
+                        const p5 = matrix[y+1][x+1];
+                        const p6 = matrix[y+1][x];
+                        const p7 = matrix[y+1][x-1];
+                        const p8 = matrix[y][x-1];
+                        const p9 = matrix[y-1][x-1];
+
+                        const B = p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9;
+                        if (B < 2 || B > 6) continue;
+                        
+                        let A = 0;
+                        if (p2 === 0 && p3 === 1) A++;
+                        if (p3 === 0 && p4 === 1) A++;
+                        if (p4 === 0 && p5 === 1) A++;
+                        if (p5 === 0 && p6 === 1) A++;
+                        if (p6 === 0 && p7 === 1) A++;
+                        if (p7 === 0 && p8 === 1) A++;
+                        if (p8 === 0 && p9 === 1) A++;
+                        if (p9 === 0 && p2 === 1) A++;
+                        if (A !== 1) continue;
+                        
+                        if (p2 * p4 * p8 !== 0) continue;
+                        if (p2 * p6 * p8 !== 0) continue;
+
+                        pixelsToRemove.push([y, x]);
+                    }
+                }
+
+                if (pixelsToRemove.length > 0) {
+                    changed = true;
+                    pixelsToRemove.forEach(([y, x]) => matrix[y][x] = 0);
+                    pixelsToRemove = [];
+                }
+            }
+
+            // Draw the matrix back to the canvas
+            for (let y = 0; y < img.height; y++) {
+                for (let x = 0; x < img.width; x++) {
+                    const color = matrix[y][x] === 1 ? 255 : 0;
+                    const index = (y * img.width + x) * 4;
+                    data[index] = color;
+                    data[index + 1] = color;
+                    data[index + 2] = color;
+                    data[index + 3] = 255;
+                }
+            }
+            ctx.putImageData(imageData, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+        };
+        img.onerror = (e) => reject(new Error('Failed to load image for skeletonization.'));
+        img.src = base64Image;
+    });
+  }
+  
+  applyMorphology(base64Image: string, operation: 'dilation' | 'erosion', shape: 'square' | 'circle', size: number): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.onload = () => {
+        const radius = Math.floor(size / 2);
+
+        const srcCanvas = document.createElement('canvas');
+        srcCanvas.width = img.width;
+        srcCanvas.height = img.height;
+        const srcCtx = srcCanvas.getContext('2d');
+        if (!srcCtx) return reject(new Error('Failed to get source 2D context.'));
+        srcCtx.drawImage(img, 0, 0);
+        const srcImageData = srcCtx.getImageData(0, 0, img.width, img.height);
+        const srcData = srcImageData.data;
+
+        const destCanvas = document.createElement('canvas');
+        destCanvas.width = img.width;
+        destCanvas.height = img.height;
+        const destCtx = destCanvas.getContext('2d');
+        if (!destCtx) return reject(new Error('Failed to get destination 2D context.'));
+        const destImageData = destCtx.createImageData(img.width, img.height);
+        const destData = destImageData.data;
+        
+        const foreground = 255; // White
+        const background = 0;   // Black
+
+        for (let y = 0; y < img.height; y++) {
+          for (let x = 0; x < img.width; x++) {
+            let hit = false;
+            for (let ky = -radius; ky <= radius; ky++) {
+              for (let kx = -radius; kx <= radius; kx++) {
+                if (shape === 'circle' && (kx * kx + ky * ky) > (radius * radius)) {
+                  continue;
+                }
+                const pixelY = y + ky;
+                const pixelX = x + kx;
+
+                if (pixelY >= 0 && pixelY < img.height && pixelX >= 0 && pixelX < img.width) {
+                  const neighborIndex = (pixelY * img.width + pixelX) * 4;
+                  if (srcData[neighborIndex] === foreground) {
+                    hit = true;
+                    break; 
+                  }
+                }
+              }
+              if (hit && operation === 'dilation') break;
+            }
+            
+            const destIndex = (y * img.width + x) * 4;
+            let finalColor;
+
+            if (operation === 'dilation') {
+                finalColor = hit ? foreground : background;
+            } else { // Erosion
+                let fit = true;
+                for (let ky = -radius; ky <= radius; ky++) {
+                  for (let kx = -radius; kx <= radius; kx++) {
+                    if (shape === 'circle' && (kx * kx + ky * ky) > (radius * radius)) {
+                      continue;
+                    }
+                    const pixelY = y + ky;
+                    const pixelX = x + kx;
+
+                    if (pixelY >= 0 && pixelY < img.height && pixelX >= 0 && pixelX < img.width) {
+                       const neighborIndex = (pixelY * img.width + pixelX) * 4;
+                       if (srcData[neighborIndex] === background) {
+                           fit = false;
+                           break;
+                       }
+                    } else {
+                       fit = false;
+                       break;
+                    }
+                  }
+                  if (!fit) break;
+                }
+                finalColor = fit ? foreground : background;
+            }
+
+            destData[destIndex] = finalColor;
+            destData[destIndex + 1] = finalColor;
+            destData[destIndex + 2] = finalColor;
+            destData[destIndex + 3] = 255;
+          }
+        }
+
+        destCtx.putImageData(destImageData, 0, 0);
+        resolve(destCanvas.toDataURL('image/png'));
+      };
+      img.onerror = (e) => reject(new Error('Failed to load image for morphology operation.'));
+      img.src = base64Image;
+    });
+  }
+
   async calculateOtsuThreshold(base64Image: string): Promise<number> {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -27,10 +316,8 @@ export class ImageProcessingService {
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = imageData.data;
 
-        // 1. Create a grayscale histogram
         const histogram = new Array(256).fill(0);
         for (let i = 0; i < data.length; i += 4) {
-          // Using luminance formula for grayscale conversion
           const greyscale = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
           histogram[greyscale]++;
         }
@@ -42,13 +329,12 @@ export class ImageProcessingService {
         }
 
         let sumB = 0;
-        let wB = 0; // weight background
-        let wF = 0; // weight foreground
+        let wB = 0;
+        let wF = 0;
 
         let varMax = 0;
         let threshold = 0;
 
-        // 2. Iterate through all possible thresholds
         for (let t = 0; t < 256; t++) {
           wB += histogram[t];
           if (wB === 0) continue;
@@ -58,13 +344,11 @@ export class ImageProcessingService {
 
           sumB += t * histogram[t];
 
-          const mB = sumB / wB; // mean background
-          const mF = (sum - sumB) / wF; // mean foreground
+          const mB = sumB / wB;
+          const mF = (sum - sumB) / wF;
 
-          // 3. Calculate Between-Class Variance
           const varBetween = wB * wF * (mB - mF) * (mB - mF);
 
-          // 4. Check if new maximum found
           if (varBetween > varMax) {
             varMax = varBetween;
             threshold = t;
@@ -78,12 +362,6 @@ export class ImageProcessingService {
     });
   }
 
-  /**
-   * NEW: Applies a noise reduction filter to an image using one of several methods.
-   * @param base64Image The base64 data URL of the source image.
-   * @param operation The noise reduction operation: 'min', 'median', or 'max'.
-   * @returns A Promise that resolves with the base64 data URL of the resulting image.
-   */
   applyNoiseReduction(base64Image: string, operation: 'min' | 'median' | 'max'): Promise<string> {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -167,13 +445,6 @@ export class ImageProcessingService {
     });
   }
 
-  /**
-   * Combines two images pixel by pixel based on a specified operation.
-   * @param base64ImageA The base64 data URL of the first source image.
-   * @param base64ImageB The base64 data URL of the second source image.
-   * @param operation The operation to perform: 'add', 'average', or 'rms'.
-   * @returns A Promise that resolves with the base64 data URL of the resulting image.
-   */
   applyAddOperation(base64ImageA: string, base64ImageB: string, operation: 'add' | 'average' | 'root'): Promise<string> {
     return new Promise((resolve, reject) => {
       const imgA = new Image();
@@ -182,7 +453,7 @@ export class ImageProcessingService {
 
       const onImageLoad = () => {
         loadedCount++;
-        if (loadedCount < 2) return; // Wait for both images to load
+        if (loadedCount < 2) return;
 
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -196,7 +467,6 @@ export class ImageProcessingService {
         canvas.width = imgA.width;
         canvas.height = imgA.height;
         
-        // Draw and get data for both images, scaling them to the new dimension
         const canvasA = document.createElement('canvas');
         canvasA.width = canvas.width;
         canvasA.height = canvas.height;
@@ -230,7 +500,7 @@ export class ImageProcessingService {
               g = (gA + gB) / 2;
               b = (bA + bB) / 2;
               break;
-            case 'root': // Root of sum of squares
+            case 'root':
               r = Math.sqrt(Math.pow(rA, 2) + Math.pow(rB, 2));
               g = Math.sqrt(Math.pow(gA, 2) + Math.pow(gB, 2));
               b = Math.sqrt(Math.pow(bA, 2) + Math.pow(bB, 2));
@@ -240,7 +510,7 @@ export class ImageProcessingService {
           resultData[i] = Math.max(0, Math.min(255, r));
           resultData[i + 1] = Math.max(0, Math.min(255, g));
           resultData[i + 2] = Math.max(0, Math.min(255, b));
-          resultData[i + 3] = 255; // Alpha
+          resultData[i + 3] = 255;
         }
 
         ctx.putImageData(resultImageData, 0, 0);
@@ -258,16 +528,8 @@ export class ImageProcessingService {
     });
   }
 
-  /**
-   * Applies a convolution matrix (kernel) to an image.
-   * @param base64Image The base64 data URL of the source image.
-   * @param matrix The convolution matrix (e.g., 3x3 or 5x5).
-   * @param divisor The number to divide the resulting pixel value by.
-   * @returns A Promise that resolves with the base64 data URL of the filtered image.
-   */
   applyConvolution(base64Image: string, matrix: number[][], divisor: number): Promise<string> {
     return new Promise((resolve, reject) => {
-      // Use a local variable for the divisor, defaulting to 1 to prevent division by zero.
       const safeDivisor = divisor === 0 ? 1 : divisor;
 
       const img = new Image();
@@ -337,11 +599,6 @@ export class ImageProcessingService {
     });
   }
   
-  /**
-   * Applies a greyscale filter to an image.
-   * @param base64Image The base64 data URL of the source image.
-   * @returns A Promise that resolves with the base64 data URL of the greyscaled image.
-   */
   applyGreyscale(base64Image: string): Promise<string> {
     return new Promise((resolve, reject) => {
       const canvas = document.createElement('canvas');
