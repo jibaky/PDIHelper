@@ -1,9 +1,9 @@
 <div class="modal-overlay" (click)="onCancel()">
   <div class="modal-content" (click)="onContentClick($event)">
-    <h3>Edit Convolution Matrix</h3>
+    <h3>Editar Matriz de Convolução</h3>
 
     <div class="matrix-controls">
-      <span>Matrix Size:</span>
+      <span>Tamanho:</span>
       <button [class.active]="matrixSize === 3" (click)="setMatrixSize(3)">3 x 3</button>
       <button [class.active]="matrixSize === 5" (click)="setMatrixSize(5)">5 x 5</button>
     </div>
@@ -22,8 +22,8 @@
     </div>
 
     <div class="modal-actions">
-      <button class="cancel-btn" (click)="onCancel()">Cancel</button>
-      <button class="save-btn" (click)="onSave()">Save and Apply</button>
+      <button class="cancel-btn" (click)="onCancel()">Cancelar</button>
+      <button class="save-btn" (click)="onSave()">Salvar e Aplicar</button>
     </div>
   </div>
 </div>

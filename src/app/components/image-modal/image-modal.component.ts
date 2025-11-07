@@ -26,25 +26,25 @@ export class ImageModalComponent {
 
   public getModalTitle(): string {
     if (!this.node) {
-      return 'Image Viewer';
+      return 'Visualizador de Imagem';
     }
     switch (this.node.type) {
       case 'editor-add':
-        return 'Add Operation Viewer';
+        return 'Visualizador da Operação de Soma';
       case 'editor-difference':
-        return 'Difference Viewer';
+        return 'Visualizador de Diferença';
       case 'editor-threshold':
-        return 'Threshold Viewer';
+        return 'Visualizador da Limiarização';
       case 'editor-noise-reduction':
-        return 'Noise Reduction Viewer';
+        return 'Visualizador da Redução de Ruído';
       default:
-        return 'Image Viewer';
+        return 'Visualizador de Imagem';
     }
   }
 
   onImageError(): void {
     this.imageLoadError = true;
-    console.error('Failed to load image in modal.');
+    console.error('Falha ao carregar imagem no modal.');
   }
 
   onOverlayClick(event: MouseEvent): void {

@@ -292,15 +292,15 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
     }
 
     const allPossibleChildren: {type: NodeType, label: string}[] = [
-        { type: 'editor-add', label: 'Add (2 Images)'},
-        { type: 'editor-difference', label: 'Difference (2 Images)'},
-        { type: 'editor-greyscale', label: 'Greyscale' },
-        { type: 'editor-threshold', label: 'Threshold' },
-        { type: 'editor-histogram-equalization', label: 'Histogram Equalization' },
-        { type: 'editor-convolution', label: 'Convolution'},
-        { type: 'editor-noise-reduction', label: 'Noise Reduction'},
-        { type: 'editor-morphology', label: 'Morphology'},
-        { type: 'editor-skeletonization', label: 'Skeletonization'}
+        { type: 'editor-add', label: 'Somar (2 Imagens)'},
+        { type: 'editor-difference', label: 'Diferença (2 Imagens)'},
+        { type: 'editor-greyscale', label: 'Tom de Cinza' },
+        { type: 'editor-threshold', label: 'Limiarização' },
+        { type: 'editor-histogram-equalization', label: 'Equalização de Histograma' },
+        { type: 'editor-convolution', label: 'Convolução'},
+        { type: 'editor-noise-reduction', label: 'Redução de Ruido'},
+        { type: 'editor-morphology', label: 'Morfologia'},
+        { type: 'editor-skeletonization', label: 'Esqueletonização'}
     ];
     
     // Returns all possible children for any valid parent node.
@@ -852,23 +852,23 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
 
   public getBoxTitle(box: treeNode): string {
     switch (box.type) {
-      case 'image': return 'Image Source';
-      case 'editor-greyscale': return 'Greyscale';
-      case 'editor-threshold': return 'Threshold';
-      case 'editor-histogram-equalization': return 'Hist. Equalization';
+      case 'image': return 'Imagem Fonte';
+      case 'editor-greyscale': return 'Tom de Cinza';
+      case 'editor-threshold': return 'Limiarização';
+      case 'editor-histogram-equalization': return 'Equalizar Histograma';
       case 'editor-convolution': 
         if(JSON.stringify(box.convolutionMatrix) === JSON.stringify([[1, 0, -1], [2, 0, -2], [1, 0, -1]])) return 'Sobel X';
         if(JSON.stringify(box.convolutionMatrix) === JSON.stringify([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])) return 'Sobel Y';
-        if(JSON.stringify(box.convolutionMatrix) === JSON.stringify([[1,4,7,4,1],[4,16,26,16,4],[7,26,41,26,7],[4,16,26,16,4],[1,4,7,4,1]]) && box.convolutionDivisor === 273) return 'Gaussian Blur (5x5)';
-        if(JSON.stringify(box.convolutionMatrix) === JSON.stringify([[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]) && box.convolutionDivisor === 25) return 'Box Blur (5x5)';
-        if(JSON.stringify(box.convolutionMatrix) === JSON.stringify([[0,-1,0],[-1,5,-1],[0,-1,0]]) && box.convolutionDivisor === 1) return 'Laplacian Sharpen';
-        return 'Convolution Filter';
-      case 'editor-add': return 'Add (2 Images)';
-      case 'editor-difference': return 'Difference (2 Images)';
-      case 'editor-noise-reduction': return 'Noise Reduction';
-      case 'editor-morphology': return 'Morphology';
-      case 'editor-skeletonization': return 'Skeletonization';
-      default: return 'Node';
+        if(JSON.stringify(box.convolutionMatrix) === JSON.stringify([[1,4,7,4,1],[4,16,26,16,4],[7,26,41,26,7],[4,16,26,16,4],[1,4,7,4,1]]) && box.convolutionDivisor === 273) return 'Desfoque Gaussiano (5x5)';
+        if(JSON.stringify(box.convolutionMatrix) === JSON.stringify([[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]) && box.convolutionDivisor === 25) return 'Desfoque de Caixa (5x5)';
+        if(JSON.stringify(box.convolutionMatrix) === JSON.stringify([[0,-1,0],[-1,5,-1],[0,-1,0]]) && box.convolutionDivisor === 1) return 'Realce Laplaciano';
+        return 'Convolução';
+      case 'editor-add': return 'Somar (2 Imagens)';
+      case 'editor-difference': return 'Diferença (2 Imagens)';
+      case 'editor-noise-reduction': return 'Redução de Ruido';
+      case 'editor-morphology': return 'Morfologia';
+      case 'editor-skeletonization': return 'Esqueletonização';
+      default: return 'Nó';
     }
   }
 
@@ -919,158 +919,158 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
 
       switch (node.type) {
         case 'image':
-          step.description = `Load a source image. The resulting image data is named '${outputVar}'.`;
+          step.description = `Carregar uma imagem fonte. Os dados de imagem resultantes são nomeados '${outputVar}'.`;
           break;
         
         case 'editor-greyscale':
-          step.description = `Apply a greyscale filter to image '${getParentVar(node.parentIds[0])}' and store the result in '${outputVar}'.`;
+          step.description = `Aplicar um filtro de tons de cinza à imagem '${getParentVar(node.parentIds[0])}' e armazenar o resultado em '${outputVar}'.`;
           step.substeps = [
-            'For each pixel in the input image:',
-            '  Read the Red (R), Green (G), and Blue (B) values.',
-            '  Calculate the luminance value using the formula: L = 0.299*R + 0.587*G + 0.114*B.',
-            '  Set the R, G, and B values of the output pixel to L.'
+            'Para cada pixel na imagem de entrada:',
+            '  Ler os valores de Vermelho (R), Verde (G) e Azul (B).',
+            '  Calcular o valor de luminância usando a fórmula: L = 0.299*R + 0.587*G + 0.114*B.',
+            '  Definir os valores R, G e B do pixel de saída como L.'
           ];
           break;
 
         case 'editor-threshold':
-          step.description = `Apply a binary threshold to image '${getParentVar(node.parentIds[0])}' and store the result in '${outputVar}'.`;
+          step.description = `Aplicar um limiar binário à imagem '${getParentVar(node.parentIds[0])}' e armazenar o resultado em '${outputVar}'.`;
           step.substeps = [
-            `Define a threshold value: ${node.threshold}. (This can be set manually or automatically using Otsu's method).`,
-            'For each pixel in the input image (typically greyscale):',
-            '  Read the intensity value of the pixel.',
-            `  If the value is less than ${node.threshold}, set the output pixel to black (0).`,
-            '  Otherwise, set the output pixel to white (255).'
+            `Definir um valor de limiar: ${node.threshold}. (Pode ser definido manualmente ou automaticamente usando o método de Otsu).`,
+            'Para cada pixel na imagem de entrada (tipicamente em tons de cinza):',
+            '  Ler o valor de intensidade do pixel.',
+            `  Se o valor for menor que ${node.threshold}, definir o pixel de saída como preto (0).`,
+            '  Caso contrário, definir o pixel de saída como branco (255).'
           ];
           if (processingOrder.some(p => p.type === 'editor-threshold')) {
             const otsuStep: PseudocodeStep = {
-              title: "About: Otsu's Method (Automatic Thresholding)",
-              description: "Otsu's method is an algorithm used to automatically find an optimal threshold value for a greyscale image. It works by iterating through all possible thresholds and selecting the one that maximizes the separability (variance) between the two classes of pixels (foreground and background).",
+              title: "Sobre: Método de Otsu (Limiarização Automática)",
+              description: "O método de Otsu é um algoritmo usado para encontrar automaticamente um valor de limiar ideal para uma imagem em tons de cinza. Ele funciona iterando sobre todos os limiares possíveis e selecionando aquele que maximiza a separabilidade (variância) entre as duas classes de pixels (primeiro plano e fundo).",
               substeps: [
-                "1. Calculate a histogram of the image's greyscale intensity levels (0-255).",
-                "2. For each possible threshold 't' from 0 to 255:",
-                "   a. Split the histogram into two groups: pixels below or equal to 't' (background) and pixels above 't' (foreground).",
-                "   b. Calculate the weight of each group (number of pixels in group / total pixels).",
-                "   c. Calculate the mean intensity of each group.",
-                "   d. Calculate the 'between-class variance' using the weights and means. This value measures how well-separated the two groups are.",
-                "3. The threshold 't' that results in the maximum 'between-class variance' is chosen as the optimal threshold."
+                "1. Calcular um histograma dos níveis de intensidade em tons de cinza da imagem (0-255).",
+                "2. Para cada limiar possível 't' de 0 a 255:",
+                "   a. Dividir o histograma em dois grupos: pixels abaixo ou iguais a 't' (fundo) e pixels acima de 't' (primeiro plano).",
+                "   b. Calcular o peso de cada grupo (número de pixels no grupo / total de pixels).",
+                "   c. Calcular a intensidade média de cada grupo.",
+                "   d. Calcular a 'variância entre classes' usando os pesos e médias. Este valor mede o quão bem separados estão os dois grupos.",
+                "3. O limiar 't' que resulta na variância máxima é escolhido como o limiar ideal."
               ]
             };
-            if (!steps.some(s => s.title.includes("Otsu's Method"))) {
+            if (!steps.some(s => s.title.includes("Método de Otsu"))) {
               steps.push(otsuStep);
             }
           }
           break;
 
         case 'editor-histogram-equalization':
-          step.description = `Apply histogram equalization to image '${getParentVar(node.parentIds[0])}' to improve contrast. Result is stored in '${outputVar}'.`;
+          step.description = `Aplicar equalização de histograma à imagem '${getParentVar(node.parentIds[0])}' para melhorar o contraste. O resultado é armazenado em '${outputVar}'.`;
           step.substeps = [
-              "Convert the image from RGB to a color space with a lightness/intensity component (like HSL or HSV).",
-              "Build a histogram of the lightness (L) values from all pixels.",
-              "Calculate the Cumulative Distribution Function (CDF) from the histogram.",
-              "Remap the original lightness values to new, equalized values using the CDF.",
-              "Create the output image by combining the original Hue and Saturation with the new equalized Lightness.",
-              "Convert the final image back to RGB."
+              "Converter a imagem de RGB para um espaço de cores com um componente de luminosidade/intensidade (como HSL ou HSV).",
+              "Construir um histograma dos valores de luminosidade (L) de todos os pixels.",
+              "Calcular a Função de Distribuição Cumulativa (FDC) a partir do histograma.",
+              "Mapear os valores de luminosidade originais para novos valores equalizados usando a FDC.",
+              "Criar a imagem de saída combinando a Matiz (Hue) e Saturação originais com a nova Luminosidade equalizada.",
+              "Converter a imagem final de volta para RGB."
           ];
           break;
           
         case 'editor-convolution':
-          step.description = `Apply a convolution filter to image '${getParentVar(node.parentIds[0])}' and store the result in '${outputVar}'.`;
+          step.description = `Aplicar um filtro de convolução à imagem '${getParentVar(node.parentIds[0])}' e armazenar o resultado em '${outputVar}'.`;
           step.substeps = [
-            `Define the convolution kernel (matrix): ${JSON.stringify(node.convolutionMatrix)}.`,
-            `Define the divisor: ${node.convolutionDivisor}.`,
-            'Create a new blank output image with slightly smaller dimensions to account for the kernel border.',
-            'For each pixel (x, y) in the new output image:',
-            '  Initialize sumR, sumG, sumB to 0.',
-            '  Place the center of the kernel over the corresponding pixel in the input image.',
-            '  For each element in the kernel:',
-            '    Multiply the kernel value by the color value of the underlying input pixel.',
-            '    Add the result to sumR, sumG, and sumB.',
-            '  Divide sumR, sumG, and sumB by the divisor.',
-            '  Assign the final (clamped to 0-255) R, G, B values to the output pixel at (x, y).'
+            `Definir o kernel (matriz) de convolução: ${JSON.stringify(node.convolutionMatrix)}.`,
+            `Definir o divisor: ${node.convolutionDivisor}.`,
+            'Criar uma nova imagem de saída em branco com dimensões ligeiramente menores para acomodar a borda do kernel.',
+            'Para cada pixel (x, y) na nova imagem de saída:',
+            '  Inicializar sumR, sumG, sumB para 0.',
+            '  Colocar o centro do kernel sobre o pixel correspondente na imagem de entrada.',
+            '  Para cada elemento no kernel:',
+            '    Multiplicar o valor do kernel pelo valor da cor do pixel de entrada subjacente.',
+            '    Adicionar o resultado a sumR, sumG e sumB.',
+            '  Dividir sumR, sumG e sumB pelo divisor.',
+            '  Atribuir os valores R, G, B finais (limitados a 0-255) ao pixel de saída em (x, y).'
           ];
           break;
 
         case 'editor-add':
           if (node.parentIds.length < 2) {
-            step.description = 'The "Add" node is waiting for a second parent connection to generate steps.';
+            step.description = 'O nó "Somar" está aguardando uma segunda conexão pai para gerar os passos.';
           } else {
             const inputVar1 = getParentVar(node.parentIds[0]);
             const inputVar2 = getParentVar(node.parentIds[1]);
             let opDesc = '';
             switch (node.addOperationMode) {
               case 'add': 
-                opDesc = `NewValue = ValueA + ValueB`;
+                opDesc = `NovoValor = ValorA + ValorB`;
                 break;
               case 'average': 
-                opDesc = `NewValue = (ValueA + ValueB) / 2`;
+                opDesc = `NovoValor = (ValorA + ValorB) / 2`;
                 break;
               case 'root':
-                opDesc = `NewValue = sqrt(ValueA^2 + ValueB^2)`;
+                opDesc = `NovoValor = sqrt(ValorA^2 + ValorB^2)`;
                 break;
             }
-            step.description = `Combine images '${inputVar1}' (Image A) and '${inputVar2}' (Image B) using the '${node.addOperationMode}' operation. The result is stored in '${outputVar}'.`;
+            step.description = `Combinar as imagens '${inputVar1}' (Imagem A) e '${inputVar2}' (Imagem B) usando a operação '${node.addOperationMode}'. O resultado é armazenado em '${outputVar}'.`;
             step.substeps = [
-              'Create a new blank output image with dimensions large enough to fit both input images.',
-              'For each corresponding pixel in Image A and Image B:',
-              '  For each color channel (R, G, B):',
-              `    Calculate the new channel value using the formula: ${opDesc}.`,
-              '    Clamp the result to the valid range [0, 255].',
-              '  Set the R, G, B values of the output pixel.'
+              'Criar uma nova imagem de saída em branco com dimensões do tamanho das imagens de entrada (assumindo tamanhos iguais).',
+              'Para cada pixel correspondente na Imagem A e na Imagem B:',
+              '  Para cada canal de cor (R, G, B):',
+              `    Calcular o novo valor do canal usando a fórmula: ${opDesc}.`,
+              '    Limitar o resultado ao intervalo válido [0, 255].',
+              '  Definir os valores R, G, B do pixel de saída.'
             ];
           }
           break;
         
         case 'editor-noise-reduction':
-            step.description = `Apply a ${node.noiseReductionMode} filter to image '${getParentVar(node.parentIds[0])}' and store the result in '${outputVar}'.`;
+            step.description = `Aplicar um filtro de ${node.noiseReductionMode} à imagem '${getParentVar(node.parentIds[0])}' e armazenar o resultado em '${outputVar}'.`;
             step.substeps = [
-              'Create a new blank output image.',
-              'For each pixel in the input image (excluding borders):',
-              '  Create a list of pixel values from the 3x3 neighborhood around the current pixel for each color channel (R, G, B).',
-              `  For each channel, find the ${node.noiseReductionMode} value in the list.`,
-              '  Set the R, G, B values of the output pixel to the calculated min, median, or max values.'
+              'Criar uma nova imagem de saída em branco.',
+              'Para cada pixel na imagem de entrada (excluindo bordas):',
+              '  Criar uma lista de valores de pixel da vizinhança 3x3 em torno do pixel atual para cada canal de cor (R, G, B).',
+              `  Para cada canal, encontrar o valor ${node.noiseReductionMode} na lista.`,
+              '  Definir os valores R, G, B do pixel de saída para os valores mínimo, mediano ou máximo calculados.'
             ];
             break;
 
         case 'editor-morphology':
-            step.description = `Apply a morphological '${node.morphologyOperation}' operation to the binary image '${getParentVar(node.parentIds[0])}' using a ${node.structuringElementSize}x${node.structuringElementSize} '${node.structuringElementShape}' structuring element. The result is stored in '${outputVar}'.`;
+            step.description = `Aplicar uma operação morfológica de '${node.morphologyOperation}' à imagem binária '${getParentVar(node.parentIds[0])}' usando um elemento estruturante '${node.structuringElementShape}' de ${node.structuringElementSize}x${node.structuringElementSize}. O resultado é armazenado em '${outputVar}'.`;
             if (node.morphologyOperation === 'dilation') {
                 step.substeps = [
-                    'Create a new blank output image.',
-                    'For each pixel in the input image:',
-                    '  Place the structuring element (SE) centered on the pixel.',
-                    '  If ANY pixel under the SE in the input image is white (foreground),',
-                    '    Then set the corresponding output pixel to white.',
-                    '  Else, set the output pixel to black.'
+                    'Criar uma nova imagem de saída em branco.',
+                    'Para cada pixel na imagem de entrada:',
+                    '  Colocar o elemento estruturante (EE) centralizado no pixel.',
+                    '  Se QUALQUER pixel sob o EE na imagem de entrada for branco (primeiro plano),',
+                    '    Então definir o pixel de saída correspondente como branco.',
+                    '  Caso contrário, definir o pixel de saída como preto.'
                 ];
             } else { // Erosion
                 step.substeps = [
-                    'Create a new blank output image.',
-                    'For each pixel in the input image:',
-                    '  Place the structuring element (SE) centered on the pixel.',
-                    '  If ALL pixels under the SE in the input image are white (foreground),',
-                    '    Then set the corresponding output pixel to white.',
-                    '  Else (if any pixel is black), set the output pixel to black.'
+                    'Criar uma nova imagem de saída em branco.',
+                    'Para cada pixel na imagem de entrada:',
+                    '  Colocar o elemento estruturante (EE) centralizado no pixel.',
+                    '  Se TODOS os pixels sob o EE na imagem de entrada forem branco (primeiro plano),',
+                    '    Então definir o pixel de saída correspondente como branco.',
+                    '  Caso contrário (se algum pixel for preto), definir o pixel de saída como preto.'
                 ];
             }
             break;
             
         case 'editor-skeletonization':
-          step.description = `Apply the Zhang-Suen thinning algorithm to the binary image '${getParentVar(node.parentIds[0])}' to produce a one-pixel-wide skeleton. The result is stored in '${outputVar}'.`;
+          step.description = `Aplicar o algoritmo de afinamento de Zhang-Suen à imagem binária '${getParentVar(node.parentIds[0])}' para produzir um esqueleto de largura de um pixel. O resultado é armazenado em '${outputVar}'.`;
           step.substeps = [
-              "Initialize a loop that continues as long as pixels are being removed in an iteration.",
-              "Step 1: Identify and mark pixels for deletion based on a set of conditions:",
-              "  a. The pixel must be a foreground pixel (white).",
-              "  b. It must have between 2 and 6 foreground neighbors.",
-              "  c. The number of 0-to-1 transitions in its ordered neighbors must be exactly 1.",
-              "  d. At least one of its North, East, or South neighbors must be background.",
-              "  e. At least one of its East, South, or West neighbors must be background.",
-              "Remove all marked pixels from the image.",
-              "Step 2: Identify and mark pixels for deletion with a slightly different set of conditions:",
-              "  a, b, c are the same as Step 1.",
-              "  d. At least one of its North, East, or West neighbors must be background.",
-              "  e. At least one of its North, South, or West neighbors must be background.",
-              "Remove all marked pixels from the image.",
-              "Repeat both steps until no pixels are removed in a full iteration.",
+              "Inicializar um loop que continua enquanto pixels estiverem sendo removidos em uma iteração.",
+              "Passo 1: Identificar e marcar pixels para exclusão com base em um conjunto de condições:",
+              "  a. O pixel deve ser um pixel de primeiro plano (branco).",
+              "  b. Deve ter entre 2 e 6 vizinhos de primeiro plano.",
+              "  c. O número de transições de 0 para 1 em seus vizinhos ordenados deve ser exatamente 1.",
+              "  d. Pelo menos um de seus vizinhos Norte, Leste ou Sul deve ser fundo (preto).",
+              "  e. Pelo menos um de seus vizinhos Leste, Sul ou Oeste deve ser fundo (preto).",
+              "Remover todos os pixels marcados da imagem.",
+              "Passo 2: Identificar e marcar pixels para exclusão com um conjunto de condições ligeiramente diferente:",
+              "  a, b, c são os mesmos do Passo 1.",
+              "  d. Pelo menos um de seus vizinhos Norte, Leste ou Oeste deve ser fundo (preto).",
+              "  e. Pelo menos um de seus vizinhos Norte, Sul ou Oeste deve ser fundo (preto).",
+              "Remova todos os pixels marcados da imagem.",
+              "Repetir ambos os passos até que nenhum pixel seja removido em uma iteração completa."
           ];
           break;
       }

@@ -18,8 +18,8 @@
 
     <!-- Placeholder for missing images -->
     <div *ngIf="imageLoadError || (node.type !== 'editor-difference' && !node.imageSrc) || (node.type === 'editor-difference' && (!node.imageSrc || !node.imageSrcB))" class="modal-image-placeholder">
-      <span *ngIf="imageLoadError">Error loading image.</span>
-      <span *ngIf="!imageLoadError">No image to display.</span>
+      <span *ngIf="imageLoadError">Erro ao Carregar Imagem.</span>
+      <span *ngIf="!imageLoadError">Sem Imagem para Exibir.</span>
     </div>
 
     <!-- Controls for Add Node -->
@@ -37,23 +37,23 @@
         <label>{{node.threshold}}</label>
       </div>
       <!-- NEW: Button to apply Otsu's method from within the modal -->
-      <button class="modal-action-button" (click)="applyOtsu.emit()">Apply Otsu</button>
+      <button class="modal-action-button" (click)="applyOtsu.emit()">Aplicar Algoritmo de Otsu</button>
     </div>
 
     <!-- Controls for Difference Node -->
     <div *ngIf="node.type === 'editor-difference'" class="modal-slider-container">
-      <label>Image A</label>
+      <label>Imagem A</label>
       <input type="range" min="0" max="100" class="difference-slider" [ngModel]="node.differenceSliderValue" (ngModelChange)="differenceSliderChanged.emit($event)">
-      <label>Image B</label>
+      <label>Imagem B</label>
     </div>
     
     <!-- Controls for Noise Reduction Node -->
     <div *ngIf="node.type === 'editor-noise-reduction'" class="modal-op-buttons">
-      <button [class.active]="node.noiseReductionMode === 'min'" (click)="changeNoiseReduction('min')">Min Filter</button>
-      <button [class.active]="node.noiseReductionMode === 'median'" (click)="changeNoiseReduction('median')">Median Filter</button>
-      <button [class.active]="node.noiseReductionMode === 'max'" (click)="changeNoiseReduction('max')">Max Filter</button>
+      <button [class.active]="node.noiseReductionMode === 'min'" (click)="changeNoiseReduction('min')">Filtro de Mínima</button>
+      <button [class.active]="node.noiseReductionMode === 'median'" (click)="changeNoiseReduction('median')">Filtro de Mediana</button>
+      <button [class.active]="node.noiseReductionMode === 'max'" (click)="changeNoiseReduction('max')">Filtro de Máxima</button>
     </div>
 
-    <button class="modal-close-button" (click)="onCloseButtonClick()">Close</button>
+    <button class="modal-close-button" (click)="onCloseButtonClick()">Fechar</button>
   </div>
 </div>

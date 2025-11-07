@@ -6,21 +6,21 @@
       </div>
     </div>
     <div class="buttons-wrapper">
-      <button (click)="addNodeFromSidebar('image')">Image Node</button>
-      <button (click)="addNodeFromSidebar('editor-add')">"Add" Node</button>
-      <button (click)="addNodeFromSidebar('editor-difference')">"Difference" Node</button>
-      <button (click)="addNodeFromSidebar('editor-greyscale')">Greyscale Node</button>
-      <button (click)="addNodeFromSidebar('editor-threshold')">Threshold Node</button>
-      <button (click)="addNodeFromSidebar('editor-histogram-equalization')">Equalization Node</button>
-      <button (click)="addNodeFromSidebar('editor-convolution')">Convolution Node</button>
-      <button (click)="addNodeFromSidebar('editor-noise-reduction')">Noise Reduction</button>
-      <button (click)="addNodeFromSidebar('editor-morphology')">Morphology Node</button>
-      <button (click)="addNodeFromSidebar('editor-skeletonization')">Skeletonization Node</button>
+      <button (click)="addNodeFromSidebar('image')">Adicionar Imagem</button>
+      <button (click)="addNodeFromSidebar('editor-add')">Soma de Imagens</button>
+      <button (click)="addNodeFromSidebar('editor-difference')">Diferença de Imagens</button>
+      <button (click)="addNodeFromSidebar('editor-greyscale')">Tom de Cinza</button>
+      <button (click)="addNodeFromSidebar('editor-threshold')">Limiarização</button>
+      <button (click)="addNodeFromSidebar('editor-histogram-equalization')">Equalização</button>
+      <button (click)="addNodeFromSidebar('editor-convolution')">Convolução</button>
+      <button (click)="addNodeFromSidebar('editor-noise-reduction')">Redução de Ruído</button>
+      <button (click)="addNodeFromSidebar('editor-morphology')">Morfologia</button>
+      <button (click)="addNodeFromSidebar('editor-skeletonization')">Esqueletonização</button>
       <!-- Preset Buttons -->
-      <button (click)="addGaussianBlurNode()">Gaussian Blur</button>
-      <button (click)="addBoxBlurNode()">Box Blur</button>
-      <button (click)="addLaplacianNode()">Laplacian Sharpen</button>
-      <button (click)="addSobelDetector()">Sobel Border Detect</button>
+      <button (click)="addGaussianBlurNode()">Desfoque Gaussiano</button>
+      <button (click)="addBoxBlurNode()">Desfoque de Caixa</button>
+      <button (click)="addLaplacianNode()">Realce Laplaciano</button>
+      <button (click)="addSobelDetector()">Detecção de Borda Sobel</button>
     </div>
   </div>
 
@@ -82,49 +82,49 @@
         <app-image-loader *ngIf="!box.imageSrc" [node]="box" (imageLoaded)="onImageLoaded($event, box.id)"></app-image-loader>
         <div *ngIf="!box.imageSrc" class="image-box-placeholder"></div>
         <img *ngIf="box.imageSrc" [src]="box.imageSrc" alt="Loaded Image" class="box-image-preview">
-        <button *ngIf="box.imageSrc" class="node-button" (click)="openImageModal($event, box)">View Image</button>
+        <button *ngIf="box.imageSrc" class="node-button" (click)="openImageModal($event, box)">Ver Imagem</button>
       </ng-container>
 
       <!-- Greyscale Node -->
       <ng-container *ngIf="box.type === 'editor-greyscale'">
-        <div *ngIf="!box.imageSrc" class="editor-box-placeholder"><span>(Connect to parent)</span></div>
+        <div *ngIf="!box.imageSrc" class="editor-box-placeholder"><span>(Conectar a um nó pai)</span></div>
         <img *ngIf="box.imageSrc" [src]="box.imageSrc" alt="Processed Image" class="box-image-preview">
-        <button *ngIf="box.imageSrc" class="node-button" (click)="openImageModal($event, box)">View Image</button>
+        <button *ngIf="box.imageSrc" class="node-button" (click)="openImageModal($event, box)">Ver Imagem</button>
       </ng-container>
 
       <!-- Threshold Node -->
       <ng-container *ngIf="box.type === 'editor-threshold'">
-        <div *ngIf="!box.imageSrc" class="editor-box-placeholder"><span>(Connect to parent)</span></div>
+        <div *ngIf="!box.imageSrc" class="editor-box-placeholder"><span>(Conectar a um nó pai)</span></div>
         <img *ngIf="box.imageSrc" [src]="box.imageSrc" alt="Processed Image" class="box-image-preview">
         <div class="node-controls-container" *ngIf="box.imageSrc">
           <div class="threshold-label">Threshold: {{box.threshold}}</div>
           <input type="range" min="0" max="255" class="threshold-slider" [(ngModel)]="box.threshold" (input)="onThresholdChange(box)" (mousedown)="$event.stopPropagation()">
-          <button class="node-button" (click)="applyOtsuThreshold(box)">Apply Otsu</button>
-          <button class="node-button" (click)="openImageModal($event, box)">View Image</button>
+          <button class="node-button" (click)="applyOtsuThreshold(box)">Aplicar Otsu</button>
+          <button class="node-button" (click)="openImageModal($event, box)">Ver Imagem</button>
         </div>
       </ng-container>
 
       <!-- Histogram Equalization Node -->
       <ng-container *ngIf="box.type === 'editor-histogram-equalization'">
-        <div *ngIf="!box.imageSrc" class="editor-box-placeholder"><span>(Connect to parent)</span></div>
+        <div *ngIf="!box.imageSrc" class="editor-box-placeholder"><span>(Conectar a um nó pai)</span></div>
         <img *ngIf="box.imageSrc" [src]="box.imageSrc" alt="Processed Image" class="box-image-preview">
-        <button *ngIf="box.imageSrc" class="node-button" (click)="openImageModal($event, box)">View Image</button>
+        <button *ngIf="box.imageSrc" class="node-button" (click)="openImageModal($event, box)">Ver Imagem</button>
       </ng-container>
 
       <!-- Convolution Node -->
       <ng-container *ngIf="box.type === 'editor-convolution'">
-        <div *ngIf="!box.imageSrc" class="editor-box-placeholder"><span>(Connect to parent)</span></div>
+        <div *ngIf="!box.imageSrc" class="editor-box-placeholder"><span>(Conectar a um nó pai)</span></div>
         <img *ngIf="box.imageSrc" [src]="box.imageSrc" alt="Processed Image" class="box-image-preview">
         <div class="node-button-container" *ngIf="box.imageSrc">
             <button class="node-button" (click)="openConvolutionModal(box)">Edit Filter</button>
-            <button class="node-button" (click)="openImageModal($event, box)">View Image</button>
+            <button class="node-button" (click)="openImageModal($event, box)">Ver Imagem</button>
         </div>
       </ng-container>
 
       <!-- Add Node -->
       <ng-container *ngIf="box.type === 'editor-add'">
         <div *ngIf="!box.imageSrc" class="editor-box-placeholder">
-          <span>(Connect to 2 parents)</span>
+          <span>(Conecte a dois nós pai)</span>
           <span class="parent-count">{{box.parentIds.length}} / 2</span>
         </div>
         <img *ngIf="box.imageSrc" [src]="box.imageSrc" alt="Processed Image" class="box-image-preview">
@@ -134,14 +134,14 @@
               <button class="op-button" [class.active]="box.addOperationMode === 'average'" (click)="setAddOperationMode(box, 'average', $event)">(A+B)/2</button>
               <button class="op-button" [class.active]="box.addOperationMode === 'root'" (click)="setAddOperationMode(box, 'root', $event)">&#8730;(A²+B²)</button>
             </div>
-            <button class="node-button" (click)="openImageModal($event, box)">View Image</button>
+            <button class="node-button" (click)="openImageModal($event, box)">Ver Imagem</button>
         </div>
       </ng-container>
 
       <!-- Difference Node -->
       <ng-container *ngIf="box.type === 'editor-difference'">
         <div *ngIf="!box.imageSrc && !box.imageSrcB" class="editor-box-placeholder">
-          <span>(Connect to 2 parents)</span>
+          <span>(Conecte a dois nós pai)</span>
           <span class="parent-count">{{box.parentIds.length}} / 2</span>
         </div>
         <div class="difference-image-container" *ngIf="box.imageSrc && box.imageSrcB">
@@ -150,13 +150,13 @@
         </div>
         <div class="node-controls-container" *ngIf="box.imageSrc && box.imageSrcB">
           <input type="range" min="0" max="100" class="difference-slider" [(ngModel)]="box.differenceSliderValue" (input)="onDifferenceSliderChange(box)" (mousedown)="$event.stopPropagation()">
-          <button class="node-button" (click)="openImageModal($event, box)">View Image</button>
+          <button class="node-button" (click)="openImageModal($event, box)">Ver Imagem</button>
         </div>
       </ng-container>
 
       <!-- Noise Reduction Node -->
       <ng-container *ngIf="box.type === 'editor-noise-reduction'">
-        <div *ngIf="!box.imageSrc" class="editor-box-placeholder"><span>(Connect to parent)</span></div>
+        <div *ngIf="!box.imageSrc" class="editor-box-placeholder"><span>(Conectar a um nó pai)</span></div>
         <img *ngIf="box.imageSrc" [src]="box.imageSrc" alt="Processed Image" class="box-image-preview">
         <div class="node-button-container" *ngIf="box.imageSrc">
           <div class="op-button-group">
@@ -164,25 +164,25 @@
             <button class="op-button" [class.active]="box.noiseReductionMode === 'median'" (click)="setNoiseReductionMode(box, 'median', $event)">Median</button>
             <button class="op-button" [class.active]="box.noiseReductionMode === 'max'" (click)="setNoiseReductionMode(box, 'max', $event)">Max</button>
           </div>
-          <button class="node-button" (click)="openImageModal($event, box)">View Image</button>
+          <button class="node-button" (click)="openImageModal($event, box)">Ver Imagem</button>
         </div>
       </ng-container>
       
       <!-- Morphology Node -->
       <ng-container *ngIf="box.type === 'editor-morphology'">
-        <div *ngIf="!box.imageSrc" class="editor-box-placeholder"><span>(Connect to a Threshold node)</span></div>
+        <div *ngIf="!box.imageSrc" class="editor-box-placeholder"><span>(Conecte a um nó de Limiarização)</span></div>
         <img *ngIf="box.imageSrc" [src]="box.imageSrc" alt="Processed Image" class="box-image-preview">
         <div class="node-button-container" *ngIf="box.imageSrc">
             <button class="node-button" (click)="openMorphologyModal(box, $event)">Edit Operation</button>
-            <button class="node-button" (click)="openImageModal($event, box)">View Image</button>
+            <button class="node-button" (click)="openImageModal($event, box)">Ver Imagem</button>
         </div>
       </ng-container>
 
       <!-- Skeletonization Node -->
       <ng-container *ngIf="box.type === 'editor-skeletonization'">
-        <div *ngIf="!box.imageSrc" class="editor-box-placeholder"><span>(Connect to a Threshold node)</span></div>
+        <div *ngIf="!box.imageSrc" class="editor-box-placeholder"><span>(Conecte a um nó de Limiarização)</span></div>
         <img *ngIf="box.imageSrc" [src]="box.imageSrc" alt="Processed Image" class="box-image-preview">
-        <button *ngIf="box.imageSrc" class="node-button" (click)="openImageModal($event, box)">View Image</button>
+        <button *ngIf="box.imageSrc" class="node-button" (click)="openImageModal($event, box)">Ver Imagem</button>
       </ng-container>
 
       <div class="connection-point top" (mouseup)="endConnection($event, box)"></div>
