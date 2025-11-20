@@ -1,0 +1,71 @@
+<div class="modal-overlay" (click)="onOverlayClick($event)">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <h3>Guia de Ferramentas</h3>
+
+    <h4 class="section-title">Barra Lateral</h4>
+    <div class="instructions-list">
+      
+      <div class="instruction-item">
+        <div class="icon-preview toggle">
+          <svg width="20" height="20" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M1 9H17 M1 3H17 M1 15H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="text">
+          <strong>Expandir/Recolher:</strong> Abre ou fecha o menu lateral de adição de nós.
+        </div>
+      </div>
+
+      <div class="instruction-item">
+        <div class="icon-preview info">i</div>
+        <div class="text">
+          <strong>Ajuda:</strong> Abre este guia de instruções e preferências.
+        </div>
+      </div>
+    </div>
+
+    <hr class="separator">
+
+    <h4 class="section-title">Controles do Nó</h4>
+    <div class="instructions-list">
+      <div class="instruction-item">
+        <div class="icon-preview maximize">⛶</div>
+        <div class="text">
+          <strong>Maximizar/Restaurar:</strong> Aumenta ou diminui o tamanho do nó para melhor visualização.
+        </div>
+      </div>
+
+      <div class="instruction-item">
+        <div class="icon-preview pseudocode">&lt;/&gt;</div>
+        <div class="text">
+          <strong>Pseudocódigo:</strong> Gera uma explicação passo a passo legível sobre o processamento.
+        </div>
+      </div>
+
+      <div class="instruction-item">
+        <div class="icon-preview delete">&times;</div>
+        <div class="text">
+          <strong>Deletar:</strong> Remove este nó e desconecta suas ligações.
+        </div>
+      </div>
+
+      <div class="instruction-item">
+        <div class="icon-preview add">+</div>
+        <div class="text">
+          <strong>Adicionar Filho:</strong> Abre o menu para conectar um novo nó abaixo deste.
+        </div>
+      </div>
+    </div>
+
+    <div class="preferences">
+      <label class="checkbox-container">
+        <input type="checkbox" [(ngModel)]="dontShowAgain">
+        Não mostrar estas instruções automaticamente ao iniciar
+      </label>
+    </div>
+
+    <div class="actions">
+      <button class="modal-close-button" (click)="close()">Entendi</button>
+    </div>
+  </div>
+</div>

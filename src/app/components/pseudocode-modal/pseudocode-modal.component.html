@@ -5,7 +5,7 @@
     <div class="steps-container">
       <div *ngIf="steps.length > 0; else noSteps" class="steps-list">
         <div *ngFor="let step of steps; let i = index" class="step-item">
-          <h4>Step {{i + 1}}: {{ step.title }}</h4>
+          <h4>Passo {{i + 1}}: {{ step.title }}</h4>
           <p>{{ step.description }}</p>
           <ul *ngIf="step.substeps.length > 0">
             <li *ngFor="let substep of step.substeps">{{ substep }}</li>

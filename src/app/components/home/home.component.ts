@@ -9,6 +9,7 @@ import { FormsModule } from '@angular/forms';
 import { ConvolutionModalComponent } from '../../components/convolution-modal/convolution-modal.component';
 import { PseudocodeModalComponent } from '../../components/pseudocode-modal/pseudocode-modal.component';
 import { MorphologyModalComponent, MorphologySettings } from '../../components/morphology-modal/morphology-modal.component';
+import { InstructionModalComponent } from '../../components/instruction-modal/instruction-modal.component';
 
 // Interface for structured pseudocode steps
 export interface PseudocodeStep {
@@ -21,7 +22,7 @@ type NodeType = 'image' | 'editor-greyscale' | 'editor-threshold' | 'editor-hist
 
 @Component({
   selector: 'app-home',
-  imports: [NgFor, NgIf, FormsModule, ImageLoaderComponent, ImageModalComponent, ConvolutionModalComponent, NgClass, PseudocodeModalComponent, MorphologyModalComponent],
+  imports: [NgFor, NgIf, FormsModule, ImageLoaderComponent, ImageModalComponent, ConvolutionModalComponent, NgClass, PseudocodeModalComponent, MorphologyModalComponent, InstructionModalComponent],
   standalone: true,
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
@@ -55,6 +56,8 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
 
   public isSidebarCollapsed: boolean = false;
 
+  public showInstructionModal: boolean = false;
+
   private resizeObserver: ResizeObserver | null = null;
   private numteste = 0;
 
@@ -74,6 +77,10 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
 
   ngOnInit(): void {
     this.boxes = this.nodeManip.tree;
+    const hideInstructions = localStorage.getItem('hideInstructions');
+    if (hideInstructions !== 'true') {
+      this.showInstructionModal = true;
+    }
   }
 
   ngAfterViewInit(): void {
@@ -113,6 +120,20 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
   ngOnDestroy(): void {
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
+    }
+  }
+
+  public openInstructionModal(): void {
+    this.showInstructionModal = true;
+  }
+
+  public closeInstructionModal(dontShowAgain: boolean): void {
+    this.showInstructionModal = false;
+    if (dontShowAgain) {
+      localStorage.setItem('hideInstructions', 'true');
+    } else {
+      // Opcional: se o usuário desmarcar, removemos do storage para aparecer na proxima
+      localStorage.removeItem('hideInstructions');
     }
   }
 
@@ -879,7 +900,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
   public openPseudocodeModal(node: treeNode, event: MouseEvent): void {
     event.stopPropagation();
     this.pseudocodeSteps = this.generatePseudocode(node);
-    this.pseudocodeNodeTitle = `Steps for: ${this.getBoxTitle(node)}`;
+    this.pseudocodeNodeTitle = `Passos para: ${this.getBoxTitle(node)}`;
     this.showPseudocodeModal = true;
   }
 

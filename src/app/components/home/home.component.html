@@ -2,7 +2,10 @@
   <div class="sidebar" [ngClass]="{ 'collapsed': isSidebarCollapsed }">
     <div class="toggle-icon-wrapper">
       <div class="toggle-icon" (click)="toggleSidebar()">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 9H17 M1 3H17 M1 15H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="info-icon" (click)="openInstructionModal()" title="Ajuda / Instruções">
+        <span>i</span>
       </div>
     </div>
     <div class="buttons-wrapper">
@@ -53,7 +56,7 @@
          (mousedown)="grabFunc($event, box)"
          (mouseup)="endConnection($event, box)">
 
-      <div class="maximize-icon" (click)="resizeNode(box, $event)"></div>
+      <div class="maximize-icon" (click)="resizeNode(box, $event)">⛶</div>
       <div class="pseudocode-icon" 
            *ngIf="box.type !== 'editor-difference' && box.type !== 'image'"
            title="Generate Pseudocode"
@@ -185,12 +188,14 @@
         <button *ngIf="box.imageSrc" class="node-button" (click)="openImageModal($event, box)">Ver Imagem</button>
       </ng-container>
 
-      <div class="connection-point top" (mouseup)="endConnection($event, box)"></div>
+      <!-- <div class="connection-point top" (mouseup)="endConnection($event, box)"></div> -->
       <!-- MODIFIED: Conditionally hide the bottom connection point for difference nodes -->
       <div *ngIf="box.type !== 'editor-difference'" class="connection-point bottom" (mousedown)="startConnection($event, box)"></div>
     </div>
   </div>
-
+  <app-instruction-modal *ngIf="showInstructionModal"
+                         (closeModal)="closeInstructionModal($event)">
+  </app-instruction-modal>
   <app-image-modal *ngIf="showImageModal"
                    [node]="currentNodeForModal"
                    (closeModal)="closeImageModal()"

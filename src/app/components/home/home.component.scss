@@ -27,19 +27,36 @@
   .toggle-icon-wrapper {
     display: flex;
     justify-content: flex-start;
-    flex-shrink: 0; 
+    align-items: center; // Alinhar verticalmente
+    gap: 10px; // Espaço entre o menu hamburger e o "i"
+    flex-shrink: 0;
+    margin-bottom: 10px; // Um pouco de espaço antes dos botões da sidebar
 
-    .toggle-icon {
+    .toggle-icon, .info-icon {
       cursor: pointer;
       color: #333;
       padding: 5px;
       border-radius: 4px;
       line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s;
 
       &:hover {
         background-color: #e0e0e0;
         color: #64447a;
       }
+    }
+
+    .info-icon {
+      width: 18px;
+      height: 18px;
+      font-weight: bold;
+      font-family: serif; // Para o "i" ficar com estilo de informação clássico
+      border: 1px solid #ccc;
+      border-radius: 50%; // Círculo
+      font-size: 12px;
     }
   }
 
@@ -80,7 +97,7 @@
   }
 
   &.collapsed {
-    width: 60px;
+    width: 80px;
     align-items: center;
 
     .toggle-icon-wrapper {
@@ -122,7 +139,7 @@
   min-width: 120px;
   height: auto;
   min-height: 180px;
-  padding: 25px 5px 5px 5px;
+  padding: 25px 5px 10px 5px;
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -242,13 +259,17 @@
     left: 5px;
     width: 12px;
     height: 12px;
-    font-size: 16px;
-    line-height: 12px;
+    font-size: 20px;
+    line-height: 15px;
     text-align: center;
-    border: 1px solid #555;
+    color: #555;
     cursor: pointer;
     z-index: 5;
-    &:hover { border-color: #000; }
+    font-weight: bold;
+    transition: color 0.2s ease;
+    &:hover {
+      color: #2196F3;
+    }
   }
 
   .pseudocode-icon {
@@ -266,7 +287,7 @@
     font-weight: bold;
     transition: color 0.2s ease;
     &:hover {
-      color: #2196F3;
+      color: #21f32c;
     }
   }
 
@@ -278,7 +299,7 @@
     height: 20px;
     font-size: 24px;
     line-height: 20px;
-    color: #888;
+    color: #555;
     text-align: center;
     cursor: pointer;
     z-index: 5;
@@ -300,7 +321,7 @@
     transition: background-color 0.2s ease;
     flex-shrink: 0;
     opacity: 0.9;
-    width: 100%;
+    width: 75%;
     box-sizing: border-box;
 
     &:hover { background-color: #6398c8; opacity: 1; }

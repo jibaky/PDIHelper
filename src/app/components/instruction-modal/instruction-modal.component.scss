@@ -1,0 +1,159 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+  width: 90%;
+  max-width: 550px; // Aumentei um pouco a largura
+  display: flex;
+  flex-direction: column;
+  gap: 10px; // Reduzi o gap geral pois agora temos gaps internos nas listas
+  font-family: 'Inter', sans-serif;
+  max-height: 90vh; // Garante que cabe na tela
+  overflow-y: auto; // Permite scroll se a tela for pequena
+}
+
+h3 {
+  margin: 0 0 10px 0;
+  color: #64447a;
+  font-size: 1.5em;
+  text-align: center;
+}
+
+.section-title {
+  margin: 5px 0;
+  color: #555;
+  font-size: 1em;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-left: 4px solid #64447a;
+  padding-left: 8px;
+}
+
+.separator {
+  border: 0;
+  height: 1px;
+  background: #e0e0e0;
+  margin: 10px 0;
+}
+
+.instructions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.instruction-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+
+  .text {
+    font-size: 0.9em;
+    color: #333;
+    line-height: 1.4;
+    
+    strong {
+      color: #64447a;
+    }
+  }
+}
+
+// Estilização dos ícones de prévia
+.icon-preview {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  flex-shrink: 0;
+  
+  // Ícones da Sidebar
+  &.toggle {
+    color: #333;
+  }
+
+  &.info {
+    font-family: serif;
+    border: 1px solid #888;
+    border-radius: 50%;
+    width: 20px; // Tamanho visual do círculo
+    height: 20px;
+    font-size: 14px;
+    color: #333;
+  }
+  
+  // Ícones dos Nós
+  &.maximize { color: #555; font-size: 18px; cursor: default; }
+  &.pseudocode { color: #555; font-size: 14px; }
+  &.delete { color: #f44336; font-size: 22px; }
+  &.add { 
+    background-color: #2196F3; 
+    color: white; 
+    border-radius: 50%; 
+    width: 24px; 
+    height: 24px; 
+    font-size: 16px;
+  }
+}
+
+.preferences {
+  margin-top: 15px;
+  display: flex;
+  justify-content: center;
+  padding-top: 10px;
+  border-top: 1px dashed #e0e0e0;
+
+  .checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+    color: #555;
+    cursor: pointer;
+    user-select: none;
+
+    input {
+      cursor: pointer;
+    }
+  }
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.modal-close-button {
+  background-color: #64447a;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-size: 1em;
+
+  &:hover {
+    background-color: #7a5a92;
+  }
+}
