@@ -46,6 +46,11 @@ export class NodeManipService {
     const sourceNode = this.tree.find(n => n.id === sourceNodeId);
     const targetNode = this.tree.find(n => n.id === targetNodeId);
 
+    if(targetNode != undefined && targetNode.type === 'image'){
+      console.warn(`Target node ${targetNodeId} cannot have parents.`);
+      return false;
+    }
+
     if (!sourceNode || !targetNode || sourceNodeId === targetNodeId) {
         console.warn('Connection failed: Invalid nodes or self-connection.');
         return false;
