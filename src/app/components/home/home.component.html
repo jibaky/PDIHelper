@@ -92,7 +92,24 @@
       <ng-container *ngIf="box.type === 'editor-greyscale'">
         <div *ngIf="!box.imageSrc" class="editor-box-placeholder"><span>(Conectar a um nó pai)</span></div>
         <img *ngIf="box.imageSrc" [src]="box.imageSrc" alt="Processed Image" class="box-image-preview">
-        <button *ngIf="box.imageSrc" class="node-button" (click)="openImageModal($event, box)">Ver Imagem</button>
+        
+        <div class="node-button-container" *ngIf="box.imageSrc">
+           <div class="op-button-group">
+              <button class="op-button" 
+                      [class.active]="box.greyscaleMode === 'luminance' || !box.greyscaleMode" 
+                      (click)="setGreyscaleMode(box, 'luminance', $event)"
+                      title="Luminância (Melhor para olho humano)">
+                Lumin
+              </button>
+              <button class="op-button" 
+                      [class.active]="box.greyscaleMode === 'average'" 
+                      (click)="setGreyscaleMode(box, 'average', $event)"
+                      title="Média Aritmética (R+G+B)/3">
+                Média
+              </button>
+           </div>
+           <button class="node-button" (click)="openImageModal($event, box)">Ver Imagem</button>
+        </div>
       </ng-container>
 
       <!-- Threshold Node -->

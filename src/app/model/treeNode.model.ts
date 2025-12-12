@@ -20,6 +20,9 @@ export interface treeNode {
   // Properties for specific node types
   threshold?: number; // For threshold nodes
   
+  // Properties for greyscale node
+  greyscaleMode?: 'luminance' | 'average';
+  
   // Properties for convolution nodes
   convolutionMatrix?: number[][];
   matrixSize?: 3 | 5;

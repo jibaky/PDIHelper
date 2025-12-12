@@ -171,7 +171,11 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
       if (type === 'editor-threshold') {
           newNode.threshold = 128;
       }
-      
+
+      if (type === 'editor-greyscale') {
+        newNode.greyscaleMode = 'luminance';
+      }
+
       if (type === 'editor-convolution') {
         newNode.matrixSize = 3;
         newNode.convolutionDivisor = 1;
@@ -345,33 +349,33 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
     switch (childNode.type) {
       case 'editor-greyscale':
         if (parentColorType === 'greyscale' || parentColorType === 'binary') {
-          alert("Warning: Applying a Greyscale filter to an image that is already greyscale or binary will have no effect.");
+          alert("Aviso: A aplicação de um filtro 'Tom de Cinza' em uma imagem que já é em tons de cinza ou binária não terá efeito.");
         }
         break;
       
       case 'editor-threshold':
         if (parentColorType === 'color') {
-          alert("Warning: Thresholding works best on greyscale images. The input will be converted to greyscale, which might lead to unexpected results if the color information is important.");
+          alert("Aviso: A Limiarização funciona melhor em imagens em tons de cinza. A entrada será convertida para tons de cinza, o que pode levar a resultados inesperados se a informação de cor for importante.");
         } else if (parentColorType === 'binary') {
-          alert("Warning: Applying a threshold to an already binary image will likely have no effect or produce a solid black or white image.");
+          alert("Aviso: A aplicação de um limiar em uma imagem que já é binária provavelmente não terá efeito ou produzirá uma imagem totalmente preta ou branca.");
         }
         break;
 
       case 'editor-histogram-equalization':
         if (parentColorType === 'binary') {
-          alert("Warning: Histogram Equalization has no effect on binary (black and white) images as there are only two color values.");
+          alert("Aviso: A Equalização de Histograma não tem efeito em imagens binárias (preto e branco), pois existem apenas dois valores de cor.");
         }
         break;
 
       case 'editor-morphology':
         if (parentColorType === 'color' || parentColorType === 'greyscale') {
-          alert("Warning: Morphological operations (like Dilation and Erosion) are designed for binary images. Applying them to color or greyscale images may produce unexpected results.");
+          alert("Aviso: Operações morfológicas (como Dilatação e Erosão) são projetadas para imagens binárias. Aplicá-las a imagens coloridas ou em tons de cinza pode produzir resultados inesperados.");
         }
         break;
 
       case 'editor-skeletonization':
          if (parentColorType === 'color' || parentColorType === 'greyscale') {
-          alert("Warning: Skeletonization is designed for binary images. Applying it to color or greyscale inputs may produce unexpected or empty results.");
+          alert("Aviso: A Esqueletonização é projetada para imagens binárias. Aplicá-la a entradas coloridas ou em tons de cinza pode produzir resultados inesperados ou vazios.");
         }
         break;
     }
@@ -601,6 +605,14 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
     // Placeholder for direct changes on the node
   }
 
+  public async setGreyscaleMode(node: treeNode, mode: 'luminance' | 'average', event?: MouseEvent) {
+    if (event) event.stopPropagation();
+    if (node.type === 'editor-greyscale') {
+      node.greyscaleMode = mode;
+      await this.updateEditorNode(node);
+    }
+  }
+
   public async setAddOperationMode(node: treeNode, mode: 'add' | 'average' | 'root', event?: MouseEvent) {
     if (event) event.stopPropagation();
     if (node.type === 'editor-add') {
@@ -668,7 +680,8 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
             let sourceImage = parentNode.imageSrc;
             switch (editorNode.type) {
               case 'editor-greyscale':
-                processedImage = await this.imageProcessor.applyGreyscale(sourceImage);
+                // Passe o modo escolhido para o serviço
+                processedImage = await this.imageProcessor.applyGreyscale(sourceImage, editorNode.greyscaleMode || 'luminance');
                 break;
               case 'editor-threshold':
                 processedImage = await this.imageProcessor.applyThreshold(sourceImage, editorNode.threshold || 128);
@@ -944,11 +957,16 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy, AfterVie
           break;
         
         case 'editor-greyscale':
-          step.description = `Aplicar um filtro de tons de cinza à imagem '${getParentVar(node.parentIds[0])}' e armazenar o resultado em '${outputVar}'.`;
+          const modeName = node.greyscaleMode === 'average' ? 'Média Aritmética' : 'Luminância';
+          const formula = node.greyscaleMode === 'average' 
+            ? 'L = (R + G + B) / 3' 
+            : 'L = 0.299*R + 0.587*G + 0.114*B';
+            
+          step.description = `Aplicar filtro de tons de cinza usando o método de ${modeName} à imagem '${getParentVar(node.parentIds[0])}'. Resultado em '${outputVar}'.`;
           step.substeps = [
             'Para cada pixel na imagem de entrada:',
             '  Ler os valores de Vermelho (R), Verde (G) e Azul (B).',
-            '  Calcular o valor de luminância usando a fórmula: L = 0.299*R + 0.587*G + 0.114*B.',
+            `  Calcular o tom de cinza usando a fórmula: ${formula}.`,
             '  Definir os valores R, G e B do pixel de saída como L.'
           ];
           break;

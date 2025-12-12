@@ -1,17 +1,17 @@
 <div class="modal-overlay" (click)="onCancel()">
   <div class="modal-content" (click)="onContentClick($event)">
-    <h3>Morphology Settings</h3>
+    <h3>Configurações de Morfologia</h3>
 
     <div class="control-group">
-      <label>Operation:</label>
+      <label>Operação:</label>
       <div class="button-group">
-        <button [class.active]="settings.operation === 'dilation'" (click)="settings.operation = 'dilation'">Dilação</button>
+        <button [class.active]="settings.operation === 'dilation'" (click)="settings.operation = 'dilation'">Dilatação</button>
         <button [class.active]="settings.operation === 'erosion'" (click)="settings.operation = 'erosion'">Erosão</button>
       </div>
     </div>
 
     <div class="control-group">
-      <label>Structuring Element Shape:</label>
+      <label>Formato do Elemento Estruturante:</label>
       <div class="button-group">
         <button [class.active]="settings.shape === 'square'" (click)="settings.shape = 'square'">Quadrado</button>
         <button [class.active]="settings.shape === 'circle'" (click)="settings.shape = 'circle'">Circulo</button>
@@ -19,7 +19,7 @@
     </div>
 
     <div class="control-group">
-      <label for="elementSize">{{ settings.shape === 'square' ? 'Side Length:' : 'Diameter:' }}</label>
+      <label for="elementSize">{{ settings.shape === 'square' ? 'Lado:' : 'Diametro:' }}</label>
       <input id="elementSize" type="number" [(ngModel)]="settings.size" min="1" step="2">
       <span class="info-text">(Deve ser um número ímpar)</span>
     </div>

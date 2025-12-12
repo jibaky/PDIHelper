@@ -460,7 +460,7 @@ export class ImageProcessingService {
         if (!ctx) return reject(new Error('Failed to get 2D context.'));
 
         if(imgA.width != imgB.width || imgA.height != imgB.height){
-          alert("The images have different sizes");
+          alert("Aviso: As imagens tem tamanho diferentes.");
           return resolve('');
         }
 
@@ -599,7 +599,7 @@ export class ImageProcessingService {
     });
   }
   
-  applyGreyscale(base64Image: string): Promise<string> {
+  applyGreyscale(base64Image: string, mode: 'luminance' | 'average' = 'luminance'): Promise<string> {
     return new Promise((resolve, reject) => {
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
@@ -618,7 +618,20 @@ export class ImageProcessingService {
         const data = imageData.data;
 
         for (let i = 0; i < data.length; i += 4) {
-          const grey = Math.floor(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          
+          let grey;
+
+          if (mode === 'average') {
+            // Média Aritmética Simples
+            grey = Math.floor((r + g + b) / 3);
+          } else {
+            // Luminância (Padrão) - Pesos baseados na percepção humana
+            grey = Math.floor(0.299 * r + 0.587 * g + 0.114 * b);
+          }
+
           data[i] = grey;
           data[i + 1] = grey;
           data[i + 2] = grey;
